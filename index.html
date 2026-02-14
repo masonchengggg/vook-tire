@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Vook One 2.0 胎压计算器 — UCI Pro 级专业工具</title>
+    <meta name="description" content="基于 Vook One 2.0 硬件物理模型的专业胎压计算器，支持多轮胎/内胎/路况/气温组合的精确 PSI 推荐。">
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="胎压计算">
+    <link rel="apple-touch-icon" href="icon-512.png">
+    <meta name="theme-color" content="#007AFF" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* ── CSS Variables for Liquid Glass theming ── */
+        :root {
+            --bg-base: #f5f5f7;
+            --bg-gradient-from: #e5e5ea;
+            --bg-gradient-to: #f2f2f7;
+            --bg-blob-a: rgba(0, 122, 255, 0.06);
+            --bg-blob-b: rgba(175, 82, 222, 0.05);
+            --glass-bg: rgba(255, 255, 255, 0.72);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --glass-border-outer: rgba(0, 0, 0, 0.04);
+            --glass-shadow: 0 8px 40px rgba(0, 0, 0, 0.06), 0 1.5px 4px rgba(0, 0, 0, 0.03);
+            --glass-highlight: rgba(255, 255, 255, 0.9);
+            --glass-highlight-width: 50%;
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-tertiary: #aeaeb2;
+            --accent: #007AFF;
+            --accent-secondary: #5856D6;
+            --accent-glow: rgba(0, 122, 255, 0.15);
+            --accent-glow-secondary: rgba(88, 86, 214, 0.12);
+            --card-inner: rgba(255, 255, 255, 0.6);
+            --slider-track: rgba(0, 0, 0, 0.08);
+            --slider-fill: var(--accent);
+            --input-bg: rgba(255, 255, 255, 0.5);
+            --input-border: rgba(255, 255, 255, 0.7);
+            --input-border-outer: rgba(0, 0, 0, 0.06);
+            --input-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            --tag-positive-bg: rgba(255, 149, 0, 0.12);
+            --tag-positive-text: #c55100;
+            --tag-negative-bg: rgba(0, 122, 255, 0.1);
+            --tag-negative-text: #0055cc;
+            --tag-neutral-bg: rgba(142, 142, 147, 0.12);
+            --tag-neutral-text: #6e6e73;
+            --divider: rgba(0, 0, 0, 0.06);
+        }
+
+        .dark {
+            --bg-base: #000000;
+            --bg-gradient-from: #0c0c0e;
+            --bg-gradient-to: #1c1c1e;
+            --bg-blob-a: rgba(0, 122, 255, 0.08);
+            --bg-blob-b: rgba(175, 82, 222, 0.06);
+            --glass-bg: rgba(44, 44, 46, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-border-outer: rgba(255, 255, 255, 0.04);
+            --glass-shadow: 0 8px 40px rgba(0, 0, 0, 0.4), 0 1.5px 4px rgba(0, 0, 0, 0.2);
+            --glass-highlight: rgba(255, 255, 255, 0.15);
+            --glass-highlight-width: 60%;
+            --text-primary: #f5f5f7;
+            --text-secondary: #98989d;
+            --text-tertiary: #636366;
+            --accent: #0a84ff;
+            --accent-secondary: #7d7aff;
+            --accent-glow: rgba(10, 132, 255, 0.25);
+            --accent-glow-secondary: rgba(125, 122, 255, 0.2);
+            --card-inner: rgba(255, 255, 255, 0.05);
+            --slider-track: rgba(255, 255, 255, 0.1);
+            --slider-fill: #0a84ff;
+            --input-bg: rgba(255, 255, 255, 0.06);
+            --input-border: rgba(255, 255, 255, 0.1);
+            --input-border-outer: rgba(255, 255, 255, 0.03);
+            --input-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            --tag-positive-bg: rgba(255, 159, 10, 0.18);
+            --tag-positive-text: #ff9f0a;
+            --tag-negative-bg: rgba(10, 132, 255, 0.15);
+            --tag-negative-text: #64d2ff;
+            --tag-neutral-bg: rgba(142, 142, 147, 0.15);
+            --tag-neutral-text: #98989d;
+            --divider: rgba(255, 255, 255, 0.06);
+        }
+
+        body {
+            background: var(--bg-base);
+            color: var(--text-primary);
+            transition: background 0.4s ease, color 0.3s ease;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .tabular-nums,
+        [x-text] {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        /* ── Background: neutral base + subtle color blobs ── */
+        .bg-mesh {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: linear-gradient(160deg, var(--bg-gradient-from), var(--bg-gradient-to));
+            transition: background 0.5s ease;
+        }
+
+        .bg-mesh::before,
+        .bg-mesh::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.8;
+            transition: background 0.5s ease;
+        }
+
+        .bg-mesh::before {
+            width: 600px;
+            height: 600px;
+            top: -10%;
+            left: -5%;
+            background: var(--bg-blob-a);
+        }
+
+        .bg-mesh::after {
+            width: 500px;
+            height: 500px;
+            bottom: -10%;
+            right: -5%;
+            background: var(--bg-blob-b);
+        }
+
+        /* ── Liquid Glass Panel (enhanced) ── */
+        .glass {
+            position: relative;
+            background: var(--glass-bg);
+            backdrop-filter: blur(60px) saturate(190%);
+            -webkit-backdrop-filter: blur(60px) saturate(190%);
+            border: 1px solid var(--glass-border);
+            outline: 1px solid var(--glass-border-outer);
+            outline-offset: -1px;
+            box-shadow:
+                var(--glass-shadow),
+                inset 0 1px 0 var(--glass-highlight),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.02);
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* ── Liquid Glass Refraction Band ── */
+        .glass::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: linear-gradient(90deg,
+                    transparent,
+                    var(--glass-highlight) var(--glass-highlight-width),
+                    transparent);
+            border-radius: 0 0 50% 50%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* ── Glass hover glow ── */
+        .glass:hover {
+            box-shadow:
+                var(--glass-shadow),
+                inset 0 1px 0 var(--glass-highlight),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.02),
+                0 0 0 1px var(--glass-border);
+        }
+
+        /* ── PSI Display Card (Liquid Glass material) ── */
+        .psi-card {
+            position: relative;
+            background: var(--card-inner);
+            backdrop-filter: blur(30px) saturate(160%);
+            -webkit-backdrop-filter: blur(30px) saturate(160%);
+            border: 1px solid var(--glass-border);
+            outline: 1px solid var(--glass-border-outer);
+            outline-offset: -1px;
+            box-shadow:
+                0 4px 24px rgba(0, 0, 0, 0.04),
+                inset 0 1px 0 var(--glass-highlight),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.02);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .psi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 15%;
+            right: 15%;
+            height: 1.5px;
+            background: linear-gradient(90deg, transparent, var(--glass-highlight), transparent);
+            border-radius: 0 0 50% 50%;
+            pointer-events: none;
+        }
+
+        .psi-card:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 var(--glass-highlight),
+                0 0 0 1px var(--glass-border);
+        }
+
+        /* ── Range Slider (Liquid Glass thumb) ── */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            background: var(--slider-track);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px) saturate(180%);
+            -webkit-backdrop-filter: blur(10px) saturate(180%);
+            border: 1.5px solid var(--glass-border);
+            border-radius: 50%;
+            box-shadow:
+                0 2px 8px rgba(0, 0, 0, 0.12),
+                0 0 0 0.5px var(--glass-border-outer),
+                inset 0 1px 0 var(--glass-highlight);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            box-shadow:
+                0 4px 14px rgba(0, 0, 0, 0.16),
+                0 0 0 0.5px var(--glass-border-outer),
+                inset 0 1px 0 var(--glass-highlight);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:active {
+            transform: scale(1.05);
+            box-shadow:
+                0 2px 8px rgba(0, 0, 0, 0.12),
+                0 0 0 4px var(--accent-glow),
+                inset 0 1px 0 var(--glass-highlight);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: var(--glass-bg);
+            border: 1.5px solid var(--glass-border);
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), inset 0 1px 0 var(--glass-highlight);
+            cursor: pointer;
+        }
+
+        /* ── Custom Select (Liquid Glass) ── */
+        select {
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--input-bg);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            border: 1px solid var(--input-border);
+            outline: 1px solid var(--input-border-outer);
+            outline-offset: -1px;
+            color: var(--text-primary);
+            box-shadow: var(--input-shadow);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236e6e73' viewBox='0 0 16 16'%3E%3Cpath d='M8 11.5l-5-5h10l-5 5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 36px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        select:hover {
+            border-color: var(--glass-border);
+            box-shadow: var(--input-shadow), 0 0 0 1px var(--glass-border-outer);
+        }
+
+        select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3.5px var(--accent-glow), var(--input-shadow);
+            outline: none;
+        }
+
+        /* ── Pill Buttons (Liquid Glass) ── */
+        .pill-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--input-bg);
+            backdrop-filter: blur(16px) saturate(150%);
+            -webkit-backdrop-filter: blur(16px) saturate(150%);
+            border: 1px solid var(--input-border);
+            box-shadow: var(--input-shadow);
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .pill-btn:hover {
+            border-color: var(--glass-border);
+            transform: translateY(-1px);
+        }
+
+        .pill-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 16px var(--accent-glow), 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* ── Correction Tags ── */
+        .correction-tag {
+            animation: fadeSlideIn 0.3s ease forwards;
+        }
+
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── Section Label ── */
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            margin-bottom: 10px;
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--text-tertiary);
+            border-radius: 3px;
+        }
+
+        /* ── Theme toggle button ── */
+        .theme-toggle {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* ── Value highlight ── */
+        .value-highlight {
+            color: var(--accent);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Smooth all transitions */
+        *,
+        *::before,
+        *::after {
+            transition-property: color, background-color, border-color, fill, stroke;
+            transition-duration: 0.2s;
+            transition-timing-function: ease;
+        }
+    </style>
+</head>
+
+<body class="font-sans antialiased min-h-screen" x-data="calculator()">
+
+    <!-- Animated mesh gradient background -->
+    <div class="bg-mesh"></div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- MAIN LAYOUT: Centered dashboard                     -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div class="relative z-10 min-h-screen flex flex-col">
+
+        <!-- ─── Top Nav Bar ─── -->
+        <header class="glass sticky top-0 z-50 relative">
+            <div class="max-w-6xl mx-auto px-6 py-3.5 flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--accent)] to-[var(--accent-secondary)] flex items-center justify-center shadow-lg"
+                        style="box-shadow: 0 4px 12px var(--accent-glow);">
+                        <svg class="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="5.5" cy="17.5" r="3.5" />
+                            <circle cx="18.5" cy="17.5" r="3.5" />
+                            <path d="M15 6a1 1 0 100-2 1 1 0 000 2zM12 17.5V14l-3-3 4-3 2 3h3" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-sm font-bold" style="color: var(--text-primary);">Vook One 2.0</h1>
+                        <p class="text-[11px] font-medium" style="color: var(--text-tertiary);">胎压计算器 · UCI Pro</p>
+                    </div>
+                </div>
+                <!-- Info + Theme toggle -->
+                <div class="flex items-center gap-4">
+                    <span class="text-[11px] font-medium hidden sm:block" style="color: var(--text-tertiary);">轮圈内宽 21mm
+                        · 重心分布 42/58</span>
+                    <!-- Dark/Light Toggle -->
+                    <button class="theme-toggle w-9 h-9 rounded-xl flex items-center justify-center"
+                        style="background: var(--input-bg); border: 1px solid var(--input-border);"
+                        @click="toggleTheme()" aria-label="切换深浅色模式">
+                        <!-- Sun icon (shown in dark mode) -->
+                        <svg x-show="isDark" class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="2" style="color: var(--text-secondary);">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <!-- Moon icon (shown in light mode) -->
+                        <svg x-show="!isDark" class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="2" style="color: var(--text-secondary);">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- ─── Content ─── -->
+        <main class="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
+
+            <!-- ═══ ROW 1: PSI Results (Hero Section) ═══ -->
+            <section class="mb-8">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-extrabold tracking-tight" style="color: var(--text-primary);">最佳胎压推荐</h2>
+                    <p class="text-sm font-medium mt-1" style="color: var(--text-secondary);">基于 Vook One 2.0 物理模型实时计算
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
+                    <!-- Front Wheel Card -->
+                    <div class="psi-card glass relative rounded-3xl p-7 text-center overflow-hidden">
+                        <div class="flex items-center justify-center gap-2 mb-5">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                                style="background: var(--accent-glow);">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2.5" style="color: var(--accent);">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                                </svg>
+                            </div>
+                            <span class="text-xs font-bold uppercase tracking-widest"
+                                style="color: var(--text-secondary);">前轮 Front</span>
+                        </div>
+                        <div class="text-6xl font-black tabular-nums leading-none" style="color: var(--accent);"
+                            x-text="frontPSI"></div>
+                        <div class="text-base font-bold mt-1" style="color: var(--accent); opacity: 0.5;">PSI</div>
+                        <div class="mt-4 pt-4" style="border-top: 1px solid var(--divider);">
+                            <span class="text-xl font-bold tabular-nums" style="color: var(--text-secondary);"
+                                x-text="frontBar"></span>
+                            <span class="text-sm font-semibold ml-1" style="color: var(--text-tertiary);">bar</span>
+                        </div>
+                    </div>
+
+                    <!-- Rear Wheel Card -->
+                    <div class="psi-card glass relative rounded-3xl p-7 text-center overflow-hidden">
+                        <div class="flex items-center justify-center gap-2 mb-5">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                                style="background: var(--accent-glow-secondary);">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2.5" style="color: var(--accent-secondary);">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                </svg>
+                            </div>
+                            <span class="text-xs font-bold uppercase tracking-widest"
+                                style="color: var(--text-secondary);">后轮 Rear</span>
+                        </div>
+                        <div class="text-6xl font-black tabular-nums leading-none"
+                            style="color: var(--accent-secondary);" x-text="rearPSI"></div>
+                        <div class="text-base font-bold mt-1" style="color: var(--accent-secondary); opacity: 0.5;">PSI
+                        </div>
+                        <div class="mt-4 pt-4" style="border-top: 1px solid var(--divider);">
+                            <span class="text-xl font-bold tabular-nums" style="color: var(--text-secondary);"
+                                x-text="rearBar"></span>
+                            <span class="text-sm font-semibold ml-1" style="color: var(--text-tertiary);">bar</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Baseline Info -->
+                <div class="text-center mt-4">
+                    <span class="text-xs font-medium" style="color: var(--text-tertiary);">
+                        总重 <span class="font-bold value-highlight" x-text="totalWeight.toFixed(1)"></span> kg
+                        · 有效胎宽 <span class="font-bold value-highlight" x-text="effectiveWidth.toFixed(1)"></span> mm
+                        · 基础 <span class="font-bold value-highlight" x-text="basePSI.toFixed(1)"></span> PSI
+                    </span>
+                </div>
+            </section>
+
+            <!-- ═══ ROW 2: Controls + Corrections ═══ -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+                <!-- ── Controls Panel 1: 基础参数 ── -->
+                <div class="glass relative rounded-2xl p-6 space-y-5 overflow-hidden">
+
+                    <!-- A. 基础重量 -->
+                    <section>
+                        <div class="section-label">基础重量</div>
+                        <div class="mb-4">
+                            <div class="flex justify-between items-baseline mb-2">
+                                <label class="text-sm font-semibold" style="color: var(--text-primary);">车手体重</label>
+                                <span class="text-sm font-bold value-highlight" x-text="riderWeight + ' kg'"></span>
+                            </div>
+                            <input type="range" min="50" max="100" step="1" x-model.number="riderWeight"
+                                aria-label="车手体重">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-baseline mb-2">
+                                <label class="text-sm font-semibold" style="color: var(--text-primary);">车辆重量</label>
+                                <span class="text-sm font-bold value-highlight"
+                                    x-text="bikeWeight.toFixed(1) + ' kg'"></span>
+                            </div>
+                            <input type="range" min="7" max="10" step="0.1" x-model.number="bikeWeight"
+                                aria-label="车辆重量">
+                        </div>
+                    </section>
+
+                    <!-- D. 胎宽选择 -->
+                    <section>
+                        <div class="section-label">胎宽选择</div>
+                        <div class="flex gap-2">
+                            <template x-for="w in [28, 30, 32]" :key="w">
+                                <button class="pill-btn flex-1 py-2.5 rounded-xl text-sm font-bold"
+                                    :class="width === w && 'active'" @click="width = w" x-text="w + 'c'"></button>
+                            </template>
+                        </div>
+                    </section>
+
+                    <!-- F. 气温 -->
+                    <section>
+                        <div class="section-label">环境气温</div>
+                        <div class="flex justify-between items-baseline mb-2">
+                            <label class="text-sm font-semibold" style="color: var(--text-primary);">温度</label>
+                            <span class="text-sm font-bold value-highlight" x-text="temp + '°C'"></span>
+                        </div>
+                        <input type="range" min="0" max="40" step="1" x-model.number="temp" aria-label="环境气温">
+                        <div class="flex justify-between text-[10px] mt-1 font-medium"
+                            style="color: var(--text-tertiary);">
+                            <span>0°C</span><span>20°C</span><span>40°C</span>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ── Controls Panel 2: 装备选择 ── -->
+                <div class="glass relative rounded-2xl p-6 space-y-5 overflow-hidden">
+
+                    <!-- B. 轮胎系统 -->
+                    <section>
+                        <div class="section-label">轮胎系统</div>
+                        <select x-model.number="tireIndex" class="w-full px-4 py-2.5 rounded-xl text-sm font-medium"
+                            aria-label="轮胎型号">
+                            <option value="0">Veposs RS600 (Vook 标配)</option>
+                            <option value="1">GP5000 / Maxxis High Road</option>
+                            <option value="2">Michelin Power Cup</option>
+                            <option value="3">Arisun Wind R1 (艾瑞森)</option>
+                        </select>
+                        <p class="mt-1.5 text-xs font-medium" style="color: var(--text-tertiary);"
+                            x-text="tires[tireIndex].desc"></p>
+                    </section>
+
+                    <!-- C. 内胎系统 -->
+                    <section>
+                        <div class="section-label">内胎系统</div>
+                        <select x-model.number="tubeIndex" class="w-full px-4 py-2.5 rounded-xl text-sm font-medium"
+                            aria-label="内胎类型">
+                            <option value="0">Vook 原厂内胎 (丁基胶)</option>
+                            <option value="1">正新 (CST) 云内胎 (橙色 TPU)</option>
+                            <option value="2">和博 (Hebo) TPU (超轻)</option>
+                        </select>
+                        <p class="mt-1.5 text-xs font-medium" style="color: var(--text-tertiary);"
+                            x-text="tubes[tubeIndex].desc"></p>
+                    </section>
+
+                    <!-- E. 路况 -->
+                    <section>
+                        <div class="section-label">路况场景</div>
+                        <select x-model.number="roadIndex" class="w-full px-4 py-2.5 rounded-xl text-sm font-medium"
+                            aria-label="路况选择">
+                            <option value="0">全新柏油 (Smooth)</option>
+                            <option value="1" selected>一般铺装 (Average)</option>
+                            <option value="2">混合路况 (Mixed)</option>
+                            <option value="3">粗糙路面 (Rough)</option>
+                            <option value="4">湿滑路面 (Wet)</option>
+                        </select>
+                        <p class="mt-1.5 text-xs font-medium" style="color: var(--text-tertiary);"
+                            x-text="roads[roadIndex].desc"></p>
+                    </section>
+
+                    <!-- G. 骑行强度 -->
+                    <section>
+                        <div class="section-label">骑行强度</div>
+                        <select x-model.number="intensityIndex"
+                            class="w-full px-4 py-2.5 rounded-xl text-sm font-medium" aria-label="骑行强度">
+                            <option value="0">通勤/休闲 (&lt;25 km/h)</option>
+                            <option value="1" selected>训练巡航 (25-32 km/h)</option>
+                            <option value="2">竞速/刷圈 (&gt;32 km/h)</option>
+                        </select>
+                        <p class="mt-1.5 text-xs font-medium" style="color: var(--text-tertiary);"
+                            x-text="intensities[intensityIndex].desc"></p>
+                    </section>
+                </div>
+
+                <!-- ── Corrections Analysis Panel ── -->
+                <div class="glass relative rounded-2xl p-6 overflow-hidden">
+                    <div class="flex items-center gap-2 mb-4">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                            style="color: var(--text-tertiary);">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        <span class="text-xs font-bold uppercase tracking-wider"
+                            style="color: var(--text-secondary);">修正分析</span>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        <template x-for="(c, i) in corrections" :key="i">
+                            <span
+                                class="correction-tag inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+                                :style="c.value > 0
+                      ? 'background:var(--tag-positive-bg);color:var(--tag-positive-text)'
+                      : c.value < 0
+                        ? 'background:var(--tag-negative-bg);color:var(--tag-negative-text)'
+                        : 'background:var(--tag-neutral-bg);color:var(--tag-neutral-text)'" :class="''"
+                                :style-delay="i * 50 + 'ms'">
+                                <span x-text="c.label"></span>
+                                <span class="font-bold tabular-nums"
+                                    x-text="(c.isMultiplier ? c.display : (c.value > 0 ? '+' : '') + c.value.toFixed(1)) + (c.isMultiplier ? '' : ' PSI')"></span>
+                            </span>
+                        </template>
+                        <span x-show="corrections.length === 0" class="text-xs font-medium"
+                            style="color: var(--text-tertiary);">当前无额外修正（标准基准状态）</span>
+                    </div>
+
+                    <!-- Calculation Breakdown -->
+                    <div style="border-top: 1px solid var(--divider);" class="pt-4">
+                        <div class="section-label">计算过程</div>
+                        <div class="space-y-2.5 text-xs font-medium" style="color: var(--text-secondary);">
+                            <div class="flex justify-between">
+                                <span>前轮负载</span>
+                                <span class="tabular-nums value-highlight"
+                                    x-text="(totalWeight * 0.42).toFixed(1) + ' kg'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>后轮负载</span>
+                                <span class="tabular-nums value-highlight"
+                                    x-text="(totalWeight * 0.58).toFixed(1) + ' kg'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>有效胎宽 (标称 + 1.5mm)</span>
+                                <span class="tabular-nums value-highlight"
+                                    x-text="effectiveWidth.toFixed(1) + ' mm'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>前轮基础 PSI</span>
+                                <span class="tabular-nums value-highlight"
+                                    x-text="_wheelBasePSI(frontRatio).toFixed(1)"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>后轮基础 PSI</span>
+                                <span class="tabular-nums value-highlight"
+                                    x-text="_wheelBasePSI(rearRatio).toFixed(1)"></span>
+                            </div>
+                            <template x-for="(c, i) in corrections" :key="'b'+i">
+                                <div class="flex justify-between">
+                                    <span x-text="c.label"></span>
+                                    <span class="tabular-nums font-bold"
+                                        :style="c.value > 0 ? 'color:var(--tag-positive-text)' : c.value < 0 ? 'color:var(--tag-negative-text)' : 'color:var(--tag-neutral-text)'"
+                                        x-text="c.isMultiplier ? c.display : (c.value > 0 ? '+' : '') + c.value.toFixed(1) + ' PSI'"></span>
+                                </div>
+                            </template>
+                            <div class="pt-2" style="border-top: 1px solid var(--divider);">
+                                <div class="flex justify-between font-bold text-sm" style="color: var(--text-primary);">
+                                    <span>最终推荐</span>
+                                    <span class="tabular-nums">
+                                        <span style="color: var(--accent);" x-text="frontPSI"></span>
+                                        /
+                                        <span style="color: var(--accent-secondary);" x-text="rearPSI"></span>
+                                        PSI
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="text-center py-6 text-[11px] font-medium" style="color: var(--text-tertiary);">
+            Vook One 2.0 Tire Pressure Calculator · Silca/SRAM 2024-2026 Methodology · Built with Alpine.js
+        </footer>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- ALPINE.JS APPLICATION LOGIC                         -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <script>
+        function calculator() {
+            return {
+                // ── Theme (auto-detect system + persist) ──
+                isDark: (() => {
+                    const saved = localStorage.getItem('vook-theme');
+                    if (saved) return saved === 'dark';
+                    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+                })(),
+
+                init() {
+                    // Apply initial theme
+                    document.documentElement.classList.toggle('dark', this.isDark);
+                    // Listen for system theme changes
+                    window.matchMedia('(prefers-color-scheme: dark)')
+                        .addEventListener('change', (e) => {
+                            if (!localStorage.getItem('vook-theme')) {
+                                this.isDark = e.matches;
+                                document.documentElement.classList.toggle('dark', this.isDark);
+                            }
+                        });
+                },
+
+                toggleTheme() {
+                    this.isDark = !this.isDark;
+                    document.documentElement.classList.toggle('dark', this.isDark);
+                    localStorage.setItem('vook-theme', this.isDark ? 'dark' : 'light');
+                },
+
+                // ── User Inputs ──
+                riderWeight: 75,
+                bikeWeight: 8.5,
+                tireIndex: 0,
+                tubeIndex: 0,
+                width: 28,
+                roadIndex: 1,
+                temp: 20,
+                intensityIndex: 1,
+
+                // ── Hardware Constants ──
+                rimInternalWidth: 21,
+                frontRatio: 0.42,
+                rearRatio: 0.58,
+
+                // ── Tire Database ──
+                tires: [
+                    { name: 'Veposs RS600 (Vook 标配)', adj: -2, desc: '标准/偏硬套管 → -2 PSI 增加形变舒适度' },
+                    { name: 'GP5000 / Maxxis High Road', adj: 0, desc: '高 TPI/柔顺 → 标准基准' },
+                    { name: 'Michelin Power Cup', adj: 1, desc: '极度柔顺/竞速 → +1 PSI 支撑补偿' },
+                    { name: 'Arisun Wind R1 (艾瑞森)', adj: -2, desc: '训练级/硬套管 → -2 PSI' },
+                ],
+
+                // ── Tube Database ──
+                tubes: [
+                    { name: 'Vook 原厂内胎 (丁基胶)', adj: 0, desc: '标准丁基胶内胎' },
+                    { name: '正新 (CST) 云内胎 (橙色 TPU)', adj: -1.5, desc: 'TPU 材质 → -1.5 PSI 优化路感' },
+                    { name: '和博 (Hebo) TPU (超轻)', adj: -2.5, desc: '极低滚阻 → -2.5 PSI 悬浮感' },
+                ],
+
+                // ── Road Database ──
+                roads: [
+                    { name: '全新柏油 (Smooth)', adj: 3, multiplier: null, desc: '纯平整路面 → +3 PSI' },
+                    { name: '一般铺装 (Average)', adj: 0, multiplier: null, desc: '标准沥青路 → 基准' },
+                    { name: '混合路况 (Mixed)', adj: -4, multiplier: null, desc: '90% 平路 + 10% 坑洼 → -4 PSI 滤震优化' },
+                    { name: '粗糙路面 (Rough)', adj: 0, multiplier: 0.92, desc: '年久失修/粗颗粒 → 降低 8%' },
+                    { name: '湿滑路面 (Wet)', adj: -6, multiplier: null, desc: '雨天/地湿 → -6 PSI 抓地优先' },
+                ],
+
+                // ── Intensity Database (Silca 2024 speed-Crr research) ──
+                intensities: [
+                    { name: '通勤/休闲', adj: -2, desc: '<25 km/h → -2 PSI 舒适优先 (滚阻影响 <0.3W)' },
+                    { name: '训练巡航', adj: 0, desc: '25-32 km/h → 基准 (平衡舒适与效率)' },
+                    { name: '竞速/刷圈', adj: 2, desc: '>32 km/h → +2 PSI 支撑 (滚阻敏感区)' },
+                ],
+
+                // ── Computed ──
+                get effectiveWidth() { return this.width + 1.5; },
+                get totalWeight() { return this.riderWeight + this.bikeWeight; },
+
+                _wheelBasePSI(ratio) {
+                    const wheelLoad = this.totalWeight * ratio;
+                    return 0.4 * wheelLoad - 3.625 * this.effectiveWidth + 165.19;
+                },
+
+                get basePSI() {
+                    return (this._wheelBasePSI(this.frontRatio) + this._wheelBasePSI(this.rearRatio)) / 2;
+                },
+
+                get tempCorrection() {
+                    const delta = this.temp - 20;
+                    if (delta < 0) return delta * 0.15;
+                    if (delta > 0) return delta * (-0.1);
+                    return 0;
+                },
+
+                get corrections() {
+                    const list = [];
+                    const tire = this.tires[this.tireIndex];
+                    const tube = this.tubes[this.tubeIndex];
+                    const road = this.roads[this.roadIndex];
+                    const intensity = this.intensities[this.intensityIndex];
+
+                    if (tire.adj !== 0) list.push({ label: tire.name.split('(')[0].trim(), value: tire.adj, isMultiplier: false });
+                    if (tube.adj !== 0) list.push({ label: tube.name.split('(')[0].trim(), value: tube.adj, isMultiplier: false });
+                    if (road.adj !== 0) list.push({ label: road.name, value: road.adj, isMultiplier: false });
+                    if (road.multiplier) list.push({ label: road.name, value: road.multiplier, isMultiplier: true, display: '×' + road.multiplier });
+                    if (this.tempCorrection !== 0) {
+                        const tempDelta = this.temp - 20;
+                        const direction = tempDelta < 0 ? '低温补偿' : '高温防胀';
+                        list.push({ label: `${this.temp}°C ${direction}`, value: this.tempCorrection, isMultiplier: false });
+                    }
+                    if (intensity.adj !== 0) list.push({ label: intensity.name, value: intensity.adj, isMultiplier: false });
+                    return list;
+                },
+
+                _calculate(ratio) {
+                    let psi = this._wheelBasePSI(ratio);
+                    psi += this.tires[this.tireIndex].adj;
+                    psi += this.tubes[this.tubeIndex].adj;
+                    const road = this.roads[this.roadIndex];
+                    psi += road.adj;
+                    psi += this.tempCorrection;
+                    psi += this.intensities[this.intensityIndex].adj;
+                    if (road.multiplier) psi *= road.multiplier;
+                    return Math.max(30, Math.min(120, psi));
+                },
+
+                get frontPSI() { return Math.round(this._calculate(this.frontRatio)); },
+                get rearPSI() { return Math.round(this._calculate(this.rearRatio)); },
+                get frontBar() { return (this._calculate(this.frontRatio) / 14.5038).toFixed(1); },
+                get rearBar() { return (this._calculate(this.rearRatio) / 14.5038).toFixed(1); },
+            };
+        }
+    </script>
+</body>
+
+<!-- Service Worker Registration -->
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('SW registered:', reg.scope))
+                .catch(err => console.log('SW registration failed:', err));
+        });
+    }
+</script>
+
+</html>

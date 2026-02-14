@@ -1,0 +1,23 @@
+{
+    "name": "Vook One 2.0 胎压计算器",
+    "short_name": "胎压计算",
+    "description": "基于 Vook One 2.0 物理模型的专业胎压推荐工具",
+    "start_url": "./index.html",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#f5f5f7",
+    "theme_color": "#007AFF",
+    "icons": [
+        {
+            "src": "icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "sports",
+        "utilities"
+    ]
+}
