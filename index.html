@@ -600,10 +600,11 @@
                         <div class="section-label">轮胎系统</div>
                         <select x-model.number="tireIndex" class="w-full px-4 py-2.5 rounded-xl text-sm font-medium"
                             aria-label="轮胎型号">
-                            <option value="0">Veposs RS600 (Vook 标配)</option>
-                            <option value="1">GP5000 / Maxxis High Road</option>
-                            <option value="2">Michelin Power Cup</option>
-                            <option value="3">Arisun Wind R1 (艾瑞森)</option>
+                            <option value="0">马牌 Grand Prix</option>
+                            <option value="1">Veposs RS600 (Vook 标配)</option>
+                            <option value="2">GP5000 / Maxxis High Road</option>
+                            <option value="3">Michelin Power Cup</option>
+                            <option value="4">Arisun Wind R1 (艾瑞森)</option>
                         </select>
                         <p class="mt-1.5 text-xs font-medium" style="color: var(--text-tertiary);"
                             x-text="tires[tireIndex].desc"></p>
@@ -614,9 +615,10 @@
                         <div class="section-label">内胎系统</div>
                         <select x-model.number="tubeIndex" class="w-full px-4 py-2.5 rounded-xl text-sm font-medium"
                             aria-label="内胎类型">
-                            <option value="0">Vook 原厂内胎 (丁基胶)</option>
-                            <option value="1">正新 (CST) 云内胎 (橙色 TPU)</option>
-                            <option value="2">和博 (Hebo) TPU (超轻)</option>
+                            <option value="0">正新 (CST) 云内胎 (丁基胶)</option>
+                            <option value="1">Vook 原厂内胎 (丁基胶)</option>
+                            <option value="2">正新 (CST) 橙色 TPU</option>
+                            <option value="3">和博 (Hebo) TPU (超轻)</option>
                         </select>
                         <p class="mt-1.5 text-xs font-medium" style="color: var(--text-tertiary);"
                             x-text="tubes[tubeIndex].desc"></p>
@@ -776,11 +778,11 @@
                 },
 
                 // ── User Inputs ──
-                riderWeight: 75,
-                bikeWeight: 8.5,
+                riderWeight: 76,
+                bikeWeight: 10.3,
                 tireIndex: 0,
                 tubeIndex: 0,
-                width: 28,
+                width: 30,
                 roadIndex: 1,
                 temp: 20,
                 intensityIndex: 1,
@@ -792,16 +794,18 @@
 
                 // ── Tire Database ──
                 tires: [
-                    { name: 'Veposs RS600 (Vook 标配)', adj: -2, desc: '标准/偏硬套管 → -2 PSI 增加形变舒适度' },
-                    { name: 'GP5000 / Maxxis High Road', adj: 0, desc: '高 TPI/柔顺 → 标准基准' },
-                    { name: 'Michelin Power Cup', adj: 1, desc: '极度柔顺/竞速 → +1 PSI 支撑补偿' },
-                    { name: 'Arisun Wind R1 (艾瑞森)', adj: -2, desc: '训练级/硬套管 → -2 PSI' },
+                    { name: '马牌 Grand Prix (Black)', adj: 1, desc: '防刺耐用型 → 28c 满压94psi, 30c 满压72psi', min: w => w <= 28 ? 65 : 50, max: w => w <= 28 ? 94 : 72 },
+                    { name: 'Veposs RS600 (Vook 标配)', adj: -2, desc: '标准/偏硬套管 → -2 PSI 增加形变舒适度', min: w => 60, max: w => 110 },
+                    { name: 'GP5000 / Maxxis High Road', adj: 0, desc: '高 TPI/柔顺 → 标准基准', min: w => 65, max: w => w <= 28 ? 115 : 100 },
+                    { name: 'Michelin Power Cup', adj: 1, desc: '极度柔顺/竞速 → +1 PSI 支撑补偿', min: w => w <= 28 ? 58 : 58, max: w => w <= 28 ? 116 : 87 },
+                    { name: 'Arisun Wind R1 (艾瑞森)', adj: -2, desc: '训练级/硬套管 → -2 PSI', min: w => 60, max: w => 120 },
                 ],
 
                 // ── Tube Database ──
                 tubes: [
+                    { name: '正新 (CST) 云内胎 (丁基胶)', adj: 0, desc: '78g 轻量丁基胶内胎' },
                     { name: 'Vook 原厂内胎 (丁基胶)', adj: 0, desc: '标准丁基胶内胎' },
-                    { name: '正新 (CST) 云内胎 (橙色 TPU)', adj: -1.5, desc: 'TPU 材质 → -1.5 PSI 优化路感' },
+                    { name: '正新 (CST) 橙色 TPU', adj: -1.5, desc: 'TPU 材质 → -1.5 PSI 优化路感' },
                     { name: '和博 (Hebo) TPU (超轻)', adj: -2.5, desc: '极低滚阻 → -2.5 PSI 悬浮感' },
                 ],
 
@@ -863,14 +867,19 @@
 
                 _calculate(ratio) {
                     let psi = this._wheelBasePSI(ratio);
-                    psi += this.tires[this.tireIndex].adj;
+                    const tire = this.tires[this.tireIndex];
+                    psi += tire.adj;
                     psi += this.tubes[this.tubeIndex].adj;
                     const road = this.roads[this.roadIndex];
                     psi += road.adj;
                     psi += this.tempCorrection;
                     psi += this.intensities[this.intensityIndex].adj;
                     if (road.multiplier) psi *= road.multiplier;
-                    return Math.max(30, Math.min(120, psi));
+                    
+                    // Enforce tire-specific limits
+                    const min = tire.min ? tire.min(this.width) : 30;
+                    const max = tire.max ? tire.max(this.width) : 120;
+                    return Math.max(min, Math.min(max, psi));
                 },
 
                 get frontPSI() { return Math.round(this._calculate(this.frontRatio)); },
