@@ -410,21 +410,6 @@
                         </div>
                     </section>
 
-                    <!-- Weight Distribution -->
-                    <section>
-                        <div class="section-label">📐 重量分配（车架几何）</div>
-                        <div class="flex gap-2">
-                            <template x-for="d in distributions" :key="d.label">
-                                <button class="pill-btn flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold"
-                                    :class="distIndex === d.idx && 'active'"
-                                    @click="distIndex = d.idx"
-                                    x-text="d.label + ' (' + Math.round(d.front*100) + '/' + Math.round(d.rear*100) + ')'"></button>
-                            </template>
-                        </div>
-                        <p class="mt-1.5 text-[10px] sm:text-xs font-medium" style="color: var(--text-tertiary);"
-                            x-text="distributions[distIndex].desc"></p>
-                    </section>
-
                     <!-- Tire Width -->
                     <section>
                         <div class="section-label">📏 胎宽选择</div>
@@ -720,7 +705,6 @@
                 systemType: 'clincher',   // 'clincher' | 'tubeless'
                 rimType: 'hooked',         // 'hooked' | 'hookless'
                 width: 30,
-                distIndex: 1,              // 0=Racing 1=Endurance 2=Touring
                 roadIndex: 1,
                 temp: 20,
                 intensityIndex: 1,
@@ -728,15 +712,9 @@
                 // ── Hardware Constants ──
                 rimInternalWidth: 21,
 
-                // ── Weight Distributions ──
-                distributions: [
-                    { idx: 0, label: '竞技', front: 0.45, rear: 0.55, desc: 'Race 几何 · 重心偏前 · 激进姿势' },
-                    { idx: 1, label: '耐力', front: 0.42, rear: 0.58, desc: 'Endurance 几何 · Bross Vagabond · 均衡舒适' },
-                    { idx: 2, label: '长途', front: 0.40, rear: 0.60, desc: 'Touring 几何 · 重心偏后 · 长途舒适' },
-                ],
-
-                get frontRatio() { return this.distributions[this.distIndex].front; },
-                get rearRatio() { return this.distributions[this.distIndex].rear; },
+                // Hardcoded weight distribution (Bross Vagabond endurance geometry)
+                get frontRatio() { return 0.42; },
+                get rearRatio() { return 0.58; },
 
                 // ── Tire Database (actual max pressures from manufacturer specs, 21mm internal rim, hooked) ──
                 // type: 'clincher' = designed for tubes; 'tubeless' = designed for tubeless (TR)
