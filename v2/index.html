@@ -460,11 +460,11 @@
                     <section>
                         <div class="section-label">🛞 轮胎系统</div>
                         <select x-model.number="tireIndex" class="w-full px-4 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-medium" aria-label="轮胎型号">
-                            <option value="0">马牌 Grand Prix（新版 Black Chili）</option>
-                            <option value="1">Veposs RS600（Vook 标配）</option>
-                            <option value="2">GP5000 / Maxxis High Road</option>
-                            <option value="3">Michelin Power Cup</option>
-                            <option value="4">Arisun Wind R1（艾瑞森）</option>
+                            <option value="0">马牌 Grand Prix（新版 Black Chili）· 开口</option>
+                            <option value="1">GP5000 · 开口胎</option>
+                            <option value="2">GP5000 S TR · 真空胎</option>
+                            <option value="3">GP TR · 真空胎</option>
+                            <option value="4">Michelin Power Cup · 开口</option>
                         </select>
                         <p class="mt-1.5 text-[10px] sm:text-xs font-medium" style="color: var(--text-tertiary);" x-text="currentTire.desc"></p>
                         <div class="mt-1 flex gap-2 text-[10px] font-semibold">
@@ -490,8 +490,9 @@
                             </button>
                         </div>
                         <p class="mt-1.5 text-[10px] sm:text-xs font-medium" style="color: var(--text-tertiary);">
-                            <span x-show="systemType === 'clincher'">传统开口胎 + 内胎系统 → 基准胎压</span>
-                            <span x-show="systemType === 'tubeless'">无内胎系统 → -8 PSI 无蛇咬风险 · 更低压更舒适</span>
+                            <span x-show="currentTire.type === 'clincher' && systemType === 'clincher'">开口胎 + 内胎系统 → 基准胎压</span>
+                            <span x-show="currentTire.type === 'clincher' && systemType === 'tubeless'">开口胎改真空 → -8 PSI（无蛇咬风险 · 更低压更舒适）</span>
+                            <span x-show="currentTire.type === 'tubeless'">真空胎设计 · 已为 Tubeless 优化 · 无额外偏移</span>
                         </p>
                     </section>
 
@@ -648,10 +649,14 @@
                             基于 <span x-text="Math.round(frontRatio*100)+'/'+Math.round(rearRatio*100)"></span> 重量分配，
                             后轮承受更多重量，需要更高胎压支撑。前轮有转向和滤震需求，略低更佳。
                         </p>
-                        <p x-show="systemType === 'tubeless'">
+                        <p x-show="currentTire.type === 'clincher' && systemType === 'tubeless'">
+                            <strong style="color: var(--text-primary);">真空胎转换：</strong>
+                            开口胎改装真空（配合补胎液）可消除蛇咬爆胎风险，安全降低 5–10 PSI。
+                        </p>
+                        <p x-show="currentTire.type === 'tubeless'">
                             <strong style="color: var(--text-primary);">真空胎优势：</strong>
-                            无内胎系统消除了蛇咬爆胎风险，可安全降低 5–10 PSI，获得更低滚阻和更好舒适度。
-                            这是 Pro Peloton 当前的主流配置。
+                            GP5000 S TR / GP TR 为原生 Tubeless 设计，已优化的胎体结构配合补胎液，
+                            可在更低胎压下保持稳定，是 Pro Peloton 当前的主流配置。
                         </p>
                         <p x-show="rimType === 'hookless'">
                             <strong style="color: var(--warning-text);">无钩圈安全提示：</strong>
@@ -694,6 +699,12 @@
                             document.documentElement.classList.toggle('dark', this.isDark);
                         }
                     });
+                    // Auto-set system type based on tire design
+                    this.$watch('tireIndex', val => {
+                        this.systemType = this.tires[val].type;
+                    });
+                    // Init: set systemType to match default tire
+                    this.systemType = this.tires[this.tireIndex].type;
                 },
 
                 toggleTheme() {
@@ -727,38 +738,44 @@
                 get frontRatio() { return this.distributions[this.distIndex].front; },
                 get rearRatio() { return this.distributions[this.distIndex].rear; },
 
-                // ── Tire Database (actual max pressures from manufacturer specs, 21mm internal rim) ──
+                // ── Tire Database (actual max pressures from manufacturer specs, 21mm internal rim, hooked) ──
+                // type: 'clincher' = designed for tubes; 'tubeless' = designed for tubeless (TR)
                 // max: { 28: PSI, 30: PSI, 32: PSI }
                 tires: [
                     {
                         name: '马牌 Grand Prix（新版 Black Chili）',
+                        type: 'clincher',
                         adj: 0,
                         desc: '新版 Grand Prix · 与 GP5000 同款 Black Chili 胶料 · 三层帘布',
                         max: { 28: 94, 30: 72, 32: 72 },
                     },
                     {
-                        name: 'Veposs RS600（Vook 标配）',
-                        adj: -2,
-                        desc: '竞技超轻开口胎 · 偏硬套管 → -2 PSI 形变补偿',
-                        max: { 28: 115, 30: 105, 32: 95 },
-                    },
-                    {
-                        name: 'GP5000 / Maxxis High Road',
+                        name: 'GP5000（开口胎）',
+                        type: 'clincher',
                         adj: 0,
-                        desc: '高 TPI / Vectran 防刺 · 竞赛基准',
+                        desc: '高 TPI · Vectran 防刺 · Black Chili · 竞赛基准',
                         max: { 28: 115, 30: 102, 32: 102 },
                     },
                     {
-                        name: 'Michelin Power Cup',
+                        name: 'GP5000 S TR（真空胎）',
+                        type: 'tubeless',
+                        adj: 0,
+                        desc: '真空胎 Tubeless Ready · 兼容有钩/无钩圈 · Pro Peloton 主流',
+                        max: { 28: 94, 30: 73, 32: 73 },
+                    },
+                    {
+                        name: 'GP TR（真空胎）',
+                        type: 'tubeless',
+                        adj: 0,
+                        desc: '次顶级真空胎 · Black Chili 胶料 · 性价比之选',
+                        max: { 28: 94, 30: 73, 32: 73 },
+                    },
+                    {
+                        name: 'Michelin Power Cup（开口胎）',
+                        type: 'clincher',
                         adj: 1,
                         desc: '极度柔顺 · Gum-X 配方 · 竞速取向 → +1 PSI 支撑',
                         max: { 28: 94, 30: 87, 32: 80 },
-                    },
-                    {
-                        name: 'Arisun Wind R1（艾瑞森）',
-                        adj: -2,
-                        desc: '训练级 · C2-ULTRA 双重配方 · 330 TPI → -2 PSI',
-                        max: { 28: 110, 30: 100, 32: 90 },
                     },
                 ],
 
@@ -838,7 +855,7 @@
                     const tire = this.currentTire;
 
                     if (tire.adj !== 0) list.push({ label: tire.name.split('（')[0].trim(), value: tire.adj, isMultiplier: false });
-                    if (this.systemType === 'tubeless') list.push({ label: '真空胎系统', value: -8, isMultiplier: false });
+                    if (tire.type === 'clincher' && this.systemType === 'tubeless') list.push({ label: '真空胎转换', value: -8, isMultiplier: false });
                     const road = this.currentRoad;
                     if (road.multiplier !== 1.0) list.push({ label: road.name, value: road.multiplier, isMultiplier: true, display: '×' + road.multiplier });
                     if (Math.abs(this.tempCorrection) > 0.05) {
@@ -874,7 +891,7 @@
 
                     // Additive corrections
                     psi += this.currentTire.adj;
-                    if (this.systemType === 'tubeless') psi -= 8;
+                    if (this.currentTire.type === 'clincher' && this.systemType === 'tubeless') psi -= 8;
                     psi += this.tempCorrection;
                     psi += this.intensities[this.intensityIndex].adj;
 
