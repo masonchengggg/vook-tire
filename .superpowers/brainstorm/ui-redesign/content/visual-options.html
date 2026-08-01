@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>公路车胎压计算器 · 视觉方向</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f1f4f7; color: #17202c; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  .shell { width: min(100%, 760px); margin: 0 auto; padding: 28px 16px 48px; }
+  .eyebrow { margin: 0 0 8px; color: #627084; font-size: 11px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+  h1 { margin: 0; font-size: clamp(26px, 7vw, 40px); letter-spacing: -.045em; line-height: 1.12; }
+  .intro { margin: 12px 0 20px; color: #5f6d7f; font-size: 14px; line-height: 1.6; }
+  .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 20px 0; }
+  .tab { border: 1px solid #d9e0e9; background: #fff; padding: 11px 8px; border-radius: 12px; color: #647286; font-size: 12px; font-weight: 750; cursor: pointer; }
+  .tab.active { border-color: #1b5cff; background: #eaf0ff; color: #1445c8; box-shadow: 0 0 0 2px rgba(27,92,255,.08); }
+  .direction { display: none; }
+  .direction.active { display: block; }
+  .direction-info { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; margin: 8px 0 16px; }
+  .badge { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: #17202c; color: #fff; font-weight: 800; font-size: 13px; }
+  .direction-info h2 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
+  .direction-info p { margin: 4px 0 0; color: #667487; font-size: 13px; line-height: 1.45; }
+  .phone { overflow: hidden; border: 1px solid rgba(22,31,43,.14); border-radius: 25px; background: #f7f9fb; box-shadow: 0 16px 35px rgba(22,31,43,.12); }
+  .phone * { font-family: inherit; }
+  .phonebar { display: flex; align-items: center; justify-content: space-between; height: 53px; padding: 0 18px; border-bottom: 1px solid rgba(28,42,60,.08); }
+  .brand { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; }
+  .wheel { width: 21px; height: 21px; border: 2px solid currentColor; border-radius: 50%; position: relative; }
+  .wheel::after { content: ""; position: absolute; inset: 4px; border: 1px solid currentColor; border-radius: 50%; opacity: .55; }
+  .theme { color: #78869a; font-size: 17px; }
+  .screen { padding: 18px 14px 18px; }
+  .kicker { margin: 0 0 5px; font-size: 10px; font-weight: 800; letter-spacing: .08em; color: #6b7788; text-transform: uppercase; }
+  .screen-title { margin: 0 0 12px; font-size: 20px; letter-spacing: -.04em; }
+  .result { border-radius: 18px; padding: 17px; }
+  .result-label { display: flex; justify-content: space-between; font-size: 11px; font-weight: 720; opacity: .72; }
+  .numbers { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 15px 0 13px; }
+  .number + .number { border-left: 1px solid currentColor; border-color: rgba(255,255,255,.22); padding-left: 15px; }
+  .number strong { display: block; font-size: 38px; line-height: .9; letter-spacing: -.075em; }
+  .number span { font-size: 10px; opacity: .72; }
+  .safe { display: flex; align-items: center; gap: 7px; padding-top: 12px; border-top: 1px solid currentColor; border-color: rgba(255,255,255,.18); font-size: 11px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #42d596; box-shadow: 0 0 0 4px rgba(66,213,150,.13); }
+  .summary { display: flex; flex-wrap: wrap; gap: 6px 12px; padding: 12px 2px 4px; color: #667487; font-size: 11px; }
+  .section { margin-top: 15px; border-radius: 15px; overflow: hidden; }
+  .section-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 13px 8px; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+  .row { display: flex; justify-content: space-between; align-items: center; min-height: 48px; padding: 0 13px; border-top: 1px solid rgba(28,42,60,.07); font-size: 13px; }
+  .row span { color: #708095; font-size: 12px; }
+  .row b { font-size: 13px; }
+  .chip { padding: 5px 8px; border-radius: 7px; font-size: 11px; font-weight: 750; }
+  .details { display: flex; justify-content: space-between; margin-top: 15px; padding: 14px 2px 0; border-top: 1px solid rgba(28,42,60,.1); font-size: 12px; font-weight: 720; }
+  .caption { margin: 14px 2px 0; color: #5f6d7f; font-size: 13px; line-height: 1.55; }
+  .caption strong { color: #17202c; }
+  .choose { display: block; width: 100%; margin-top: 14px; border: 0; border-radius: 12px; padding: 13px; background: #17202c; color: #fff; font-weight: 800; cursor: pointer; }
+  /* A — instrument */
+  #a .phone { background: #f5f7fa; }
+  #a .phonebar { background: #fff; }
+  #a .result { background: #13253f; color: #f8fbff; box-shadow: 0 12px 25px rgba(18,41,72,.16); }
+  #a .section { background: #fff; border: 1px solid #e3e9f0; }
+  #a .section-head { color: #49617e; }
+  #a .chip { color: #1552e1; background: #eaf0ff; }
+  #a .choose { background: #1857e8; }
+  /* B — minimal */
+  #b .phone { background: #fafafa; border-radius: 21px; box-shadow: 0 8px 22px rgba(22,31,43,.08); }
+  #b .phonebar { height: 51px; background: #fafafa; }
+  #b .result { background: #fff; border: 1px solid #e6e7e9; color: #14171c; box-shadow: none; }
+  #b .number + .number { border-color: #e4e6e9; }
+  #b .safe { border-color: #e5e7ea; }
+  #b .section { background: #fff; border: 1px solid #e7e8ea; border-radius: 13px; }
+  #b .section-head { color: #818991; }
+  #b .chip { background: #eef4ff; color: #205fd6; }
+  #b .choose { background: #1d222a; }
+  /* C — performance */
+  #c .phone { background: #0c0e11; border-color: #292e35; color: #edf1f5; box-shadow: 0 16px 35px rgba(0,0,0,.28); }
+  #c .phonebar { background: #0c0e11; border-color: #242a30; }
+  #c .theme, #c .kicker, #c .summary, #c .caption { color: #9aa4b1; }
+  #c .result { background: #151a20; color: #eff4f7; border-left: 3px solid #c8ff29; border-radius: 10px; }
+  #c .number + .number { border-color: #38414b; }
+  #c .safe { border-color: #38414b; }
+  #c .dot { background: #c8ff29; box-shadow: 0 0 0 4px rgba(200,255,41,.12); }
+  #c .section { border: 1px solid #272e35; background: #12161b; border-radius: 10px; }
+  #c .section-head { color: #c8ff29; }
+  #c .row { border-color: #262d35; }
+  #c .row span { color: #9ba6b4; }
+  #c .chip { color: #0c0e11; background: #c8ff29; border-radius: 3px; }
+  #c .details { border-color: #293039; }
+  #c .choose { background: #c8ff29; color: #101318; border-radius: 8px; }
+  .principles { margin-top: 22px; padding: 16px; border-radius: 15px; border: 1px solid #dbe2eb; background: #fff; }
+  .principles h3 { margin: 0 0 10px; font-size: 14px; }
+  .principles ul { margin: 0; padding-left: 17px; color: #637185; font-size: 12px; line-height: 1.75; }
+</style>
+</head>
+<body>
+<main class="shell">
+  <p class="eyebrow">Visual redesign · for confirmation</p>
+  <h1>让胎压结果成为唯一视觉主角</h1>
+  <p class="intro">三套方案都保留现有的轮胎数据库、SILCA Breakpoint 计算、无钩圈上限与深浅色主题；只改变视觉层级和信息组织。</p>
+  <nav class="tabs" aria-label="视觉方案">
+    <button class="tab active" data-target="a" type="button">A 专业仪表</button>
+    <button class="tab" data-target="b" type="button">B 高级极简</button>
+    <button class="tab" data-target="c" type="button">C 性能竞赛</button>
+  </nav>
+
+  <section class="direction active" id="a">
+    <div class="direction-info"><div class="badge">A</div><div><h2>专业骑行仪表盘 · 推荐</h2><p>减少装饰，把结果、安全状态和操作顺序做得像一件可靠的骑行装备。</p></div></div>
+    <div class="phone">
+      <div class="phonebar"><div class="brand"><i class="wheel"></i>公路车胎压计算器</div><div class="theme">◐</div></div>
+      <div class="screen">
+        <p class="kicker">Bike setup · 21 mm internal width</p><h3 class="screen-title">今日建议胎压</h3>
+        <div class="result"><div class="result-label"><span>CAT 2 · 一般铺装</span><span>训练巡航</span></div><div class="numbers"><div class="number"><span>前轮</span><strong>59</strong><span>PSI · 4.0 bar</span></div><div class="number"><span>后轮</span><strong>64</strong><span>PSI · 4.4 bar</span></div></div><div class="safe"><i class="dot"></i>当前设置安全 · 允许范围 35–72 PSI</div></div>
+        <div class="summary"><span>总重 81.2 kg</span><span>30C（有效 31.5 mm）</span><span>载荷 42 / 58</span></div>
+        <div class="section"><div class="section-head">骑手与车辆 <span>01</span></div><div class="row"><span>车手体重</span><b>74 kg</b></div><div class="row"><span>车辆重量</span><b>7.2 kg</b></div><div class="row"><span>胎宽</span><b class="chip">30C</b></div></div>
+        <div class="section"><div class="section-head">轮胎与路况 <span>02</span></div><div class="row"><span>马牌 Grand Prix</span><b>开口胎</b></div><div class="row"><span>路面</span><b>Cat 2 · 一般铺装</b></div></div>
+        <div class="details"><span>修正因子：无额外修正</span><span>查看计算过程 ›</span></div>
+      </div>
+    </div>
+    <p class="caption"><strong>核心变化：</strong>以深色“结果仪表”作为唯一主卡；所有参数降为连续设置区，说明内容默认后置。</p>
+    <button class="choose" type="button">选择 A · 专业骑行仪表盘</button>
+  </section>
+
+  <section class="direction" id="b">
+    <div class="direction-info"><div class="badge">B</div><div><h2>高级极简工具</h2><p>安静的白底、细分隔线和更大的留白，像一款高品质系统工具。</p></div></div>
+    <div class="phone">
+      <div class="phonebar"><div class="brand"><i class="wheel"></i>公路车胎压计算器</div><div class="theme">◐</div></div>
+      <div class="screen">
+        <p class="kicker">建议胎压</p><h3 class="screen-title">为今天的路面设定</h3>
+        <div class="result"><div class="result-label"><span>一般铺装 · 20°C</span><span>安全</span></div><div class="numbers"><div class="number"><span>前轮</span><strong>59</strong><span>PSI · 4.0 bar</span></div><div class="number"><span>后轮</span><strong>64</strong><span>PSI · 4.4 bar</span></div></div><div class="safe"><i class="dot"></i>安全范围 35–72 PSI</div></div>
+        <div class="summary"><span>74 kg 骑手</span><span>7.2 kg 车辆</span><span>30C 胎宽</span></div>
+        <div class="section"><div class="section-head">基础设置</div><div class="row"><span>骑手与车辆</span><b>74 · 7.2 kg</b></div><div class="row"><span>胎宽</span><b class="chip">30C</b></div><div class="row"><span>环境温度</span><b>20°C</b></div></div>
+        <div class="section"><div class="section-head">骑行配置</div><div class="row"><span>轮胎</span><b>Grand Prix · 开口</b></div><div class="row"><span>场景</span><b>一般铺装 · 巡航</b></div></div>
+        <div class="details"><span>计算依据与微调建议</span><span>›</span></div>
+      </div>
+    </div>
+    <p class="caption"><strong>核心变化：</strong>最大限度去除视觉材料感；最容易长期使用，但专业仪表的冲击力较弱。</p>
+    <button class="choose" type="button">选择 B · 高级极简工具</button>
+  </section>
+
+  <section class="direction" id="c">
+    <div class="direction-info"><div class="badge">C</div><div><h2>竞赛性能工具</h2><p>低饱和黑色基底与单一赛事强调色，读数更像赛前调校面板。</p></div></div>
+    <div class="phone">
+      <div class="phonebar"><div class="brand"><i class="wheel"></i>公路车胎压计算器</div><div class="theme">◐</div></div>
+      <div class="screen">
+        <p class="kicker">Race setup / CAT 2</p><h3 class="screen-title">PRESSURE TARGET</h3>
+        <div class="result"><div class="result-label"><span>30C · HOOKED · CLINCHER</span><span>SAFE</span></div><div class="numbers"><div class="number"><span>FRONT</span><strong>59</strong><span>PSI / 4.0 BAR</span></div><div class="number"><span>REAR</span><strong>64</strong><span>PSI / 4.4 BAR</span></div></div><div class="safe"><i class="dot"></i>SAFE WINDOW · 35–72 PSI</div></div>
+        <div class="summary"><span>SYSTEM 81.2 KG</span><span>LOAD 42 / 58</span></div>
+        <div class="section"><div class="section-head">01 · Rider setup</div><div class="row"><span>RIDER / BIKE</span><b>74.0 / 7.2 KG</b></div><div class="row"><span>TYRE WIDTH</span><b class="chip">30C</b></div></div>
+        <div class="section"><div class="section-head">02 · Surface</div><div class="row"><span>TYRE SYSTEM</span><b>CLINCHER</b></div><div class="row"><span>ROAD / INTENSITY</span><b>CAT 2 / CRUISE</b></div></div>
+        <div class="details"><span>CALCULATION TELEMETRY</span><span>›</span></div>
+      </div>
+    </div>
+    <p class="caption"><strong>核心变化：</strong>性能感最强，但对日常骑行场景会更硬朗、更“赛车化”。</p>
+    <button class="choose" type="button">选择 C · 竞赛性能工具</button>
+  </section>
+
+  <aside class="principles"><h3>无论选哪套，都遵守这四点</h3><ul><li>结果区只有一个主视觉，安全状态同屏可见。</li><li>取消全页面玻璃材质，以表面、间距和文字层级区分内容。</li><li>移除 emoji，图标、字号和单位统一成一套系统。</li><li>“计算过程 / 为什么是这个胎压”改为默认收起的渐进信息。</li></ul></aside>
+</main>
+<script>
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.direction');
+  function select(id) {
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.target === id));
+    panels.forEach(p => p.classList.toggle('active', p.id === id));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  tabs.forEach(tab => tab.addEventListener('click', () => select(tab.dataset.target)));
+  document.querySelectorAll('.choose').forEach(button => button.addEventListener('click', () => {
+    button.textContent = '已选择 · ' + button.textContent.replace('选择 ', '');
+    document.querySelectorAll('.choose').forEach(b => { if (b !== button) b.textContent = b.textContent.replace('已选择 · ', '选择 '); });
+  }));
+</script>
+</body>
+</html>

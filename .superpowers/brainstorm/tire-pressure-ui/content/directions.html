@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>公路车胎压计算器 · 视觉方向</title>
+  <style>
+    :root { --ink:#16202f; --muted:#68758a; --paper:#f4f6f8; --line:#dfe5ea; --blue:#2264e5; --lime:#b8eb48; --orange:#ee8b31; --shadow:0 20px 48px rgba(19,34,55,.12); }
+    *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#f7f8fa 0%,#edf1f5 100%);color:var(--ink);font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.45}
+    main{width:min(1170px,calc(100% - 32px));margin:0 auto;padding:42px 0 56px}.eyebrow{font-size:12px;letter-spacing:.13em;font-weight:800;color:var(--blue);text-transform:uppercase}.intro{max-width:760px;margin-bottom:26px}h1{font-size:clamp(30px,5vw,48px);line-height:1.1;letter-spacing:-.04em;margin:9px 0 14px}.intro p{margin:0;color:var(--muted);font-size:15px}.diagnosis{display:flex;flex-wrap:wrap;gap:8px;margin:19px 0 30px}.diagnosis span{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;color:#475569;font-size:12px}
+    .recommend{padding:13px 16px;border-radius:13px;background:#1b2b3d;color:white;margin:0 0 28px;font-size:14px}.recommend b{color:var(--lime)}
+    .directions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.card{border:1px solid #dce3e9;background:white;border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(30,50,70,.06);transition:.2s}.card:hover{transform:translateY(-4px);box-shadow:var(--shadow)}.card-head{padding:18px 19px 13px;display:flex;gap:10px;align-items:flex-start}.index{display:grid;place-items:center;min-width:27px;height:27px;border-radius:8px;background:#e9effb;color:#1d5add;font-size:13px;font-weight:800}.card h2{margin:0;font-size:17px;line-height:1.2}.card .sub{margin:4px 0 0;font-size:12px;color:var(--muted)}.phone{margin:0 13px;border-radius:16px 16px 9px 9px;border:7px solid #172233;min-height:380px;overflow:hidden;background:#fff;position:relative}.phone-bar{height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:10px;font-weight:800}.pill{width:26px;height:18px;border-radius:9px;background:currentColor;opacity:.16}.copy{padding:16px 19px 18px;border-top:1px solid #edf0f3}.copy strong{font-size:13px}.copy ul{margin:8px 0 0;padding-left:17px;font-size:12px;color:#5d6c7e}.copy li+li{margin-top:4px}.choose{margin:0 19px 19px;padding:10px 12px;border:0;border-radius:10px;width:calc(100% - 38px);font-weight:800;cursor:pointer;font-size:13px}.a .choose{background:var(--blue);color:white}.b .choose{background:#0f172a;color:#fff}.c .choose{background:#cfec65;color:#192017}.ribbon{position:absolute;right:16px;top:16px;background:#d9f78c;color:#304015;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:800;z-index:2}
+    /* A - cycling computer */ .a .phone{background:#f2f5f4}.a .phone-bar{background:#172233;color:white}.a .a-hero{margin:10px;border-radius:12px;background:#172233;color:white;padding:14px}.a .a-label{font-size:10px;letter-spacing:.08em;color:#a7b7c8}.a .a-values{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:13px}.a .a-values div{border-top:1px solid #506174;padding-top:7px}.a .a-values b{font-size:33px;line-height:1}.a .a-values small{font-size:11px;color:#a7b7c8}.a .a-status{margin:10px;padding:9px;border:1px solid #d6e0dd;border-radius:10px;color:#495b58;font-size:10px;background:#fff}.a .a-status b{display:block;color:#1d302b;font-size:11px;margin-bottom:3px}.a .a-controls{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px}.a .a-controls div{padding:9px;background:#fff;border:1px solid #dde6e3;border-radius:9px;font-size:9px;color:#68757a}.a .a-controls b{color:#1b2b32;font-size:12px;display:block;margin-top:3px}
+    /* B - utility sheet */ .b .phone{background:#fbfbfc;border-color:#101828}.b .phone-bar{padding-top:2px}.b .b-hero{padding:15px 15px 10px}.b .b-hero small{font-weight:700;color:#738097}.b .b-hero h3{margin:3px 0 0;font-size:23px;letter-spacing:-.05em}.b .b-hero p{margin:4px 0;font-size:10px;color:#728097}.b .b-tile{margin:0 10px;background:#101828;color:white;border-radius:14px;padding:14px}.b .b-tile span{font-size:10px;color:#9eabc0}.b .b-number{font-size:47px;letter-spacing:-.09em;font-weight:800;line-height:1;margin:5px 0}.b .b-below{display:flex;justify-content:space-between;font-size:10px;color:#ced6e4}.b .b-row{padding:12px 14px;margin:10px;border:1px solid #e4e8ee;border-radius:11px;background:white;font-size:10px;color:#748198;display:flex;justify-content:space-between}.b .b-row b{color:#16202f;font-size:11px}.b .b-tabs{position:absolute;bottom:0;width:100%;background:white;border-top:1px solid #e7ebef;display:flex;justify-content:space-around;padding:9px;color:#96a0ac;font-size:9px}.b .b-tabs b{color:#101828}
+    /* C - technical */ .c .phone{background:#0c1419;color:#e5edef;border-color:#0c1419}.c .phone-bar{background:#101c22;color:#e5edef}.c .c-hero{padding:14px 12px}.c .c-kicker{font-size:9px;letter-spacing:.12em;color:#92a4a8}.c .c-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#26363c;border:1px solid #26363c;margin-top:10px}.c .c-grid div{background:#0c1419;padding:11px}.c .c-grid span{font-size:9px;color:#91a2a8}.c .c-grid b{display:block;font-size:31px;letter-spacing:-.07em;line-height:1.1;margin:5px 0;color:#eef5f3}.c .c-grid small{font-size:9px;color:#b4ed45}.c .c-chart{margin:0 12px;border:1px solid #2d4148;border-radius:9px;height:85px;position:relative;background:linear-gradient(transparent 24%,#1e3036 25%,transparent 26%,transparent 49%,#1e3036 50%,transparent 51%,transparent 74%,#1e3036 75%,transparent 76%)}.c .c-chart:after{content:"";position:absolute;left:11px;right:12px;bottom:16px;height:25px;border-top:2px solid #b7ed47;border-radius:50% 50% 0 0/100% 100% 0 0;transform:skewX(-18deg)}.c .c-tags{display:flex;gap:5px;flex-wrap:wrap;margin:11px 12px}.c .c-tags span{font-size:9px;border:1px solid #33464c;padding:5px 6px;border-radius:5px;color:#a4b5b9}.c .c-tags span:first-child{color:#0c1419;background:#b7ed47;border-color:#b7ed47}
+    .principles{margin-top:26px;border:1px solid var(--line);border-radius:17px;background:rgba(255,255,255,.72);padding:20px}.principles h3{margin:0 0 12px;font-size:15px}.principle-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.principle-grid b{display:block;font-size:12px;margin-bottom:3px}.principle-grid span{font-size:12px;color:#69778a}
+    @media(max-width:780px){main{padding-top:30px}.directions{grid-template-columns:1fr}.phone{min-height:350px}.principle-grid{grid-template-columns:1fr 1fr}.intro p{font-size:14px}}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="intro">
+      <div class="eyebrow">Visual redesign · for confirmation</div>
+      <h1>胎压计算器应该先“给出答案”，再“解释答案”</h1>
+      <p>现状的算法与字段已经足够完整；问题是所有区域都使用同样的毛玻璃、圆角、阴影与说明密度，导致推荐胎压、输入参数和解释内容在同一个视觉层级里竞争。</p>
+    </div>
+    <div class="diagnosis"><span>玻璃效果过多</span><span>圆角容器过密</span><span>首屏没有唯一主信息</span><span>输入与解释同等抢眼</span></div>
+    <div class="recommend"><b>我的建议：选 A「骑行电脑」。</b>它最贴合公路车场景：专业、耐看、不像普通表单；首屏只强调前/后 PSI，参数以简洁模块承接，技术解释折叠到结果之后。</div>
+    <section class="directions">
+      <article class="card a">
+        <span class="ribbon">推荐</span>
+        <div class="card-head"><span class="index">A</span><div><h2>骑行电脑</h2><p class="sub">专业、克制、适合长期使用</p></div></div>
+        <div class="phone">
+          <div class="phone-bar"><span>胎压建议</span><span class="pill"></span></div>
+          <div class="a-hero"><div class="a-label">RECOMMENDED PRESSURE · CAT 2</div><div class="a-values"><div><small>FRONT</small><br><b>59</b> <small>PSI</small></div><div><small>REAR</small><br><b>64</b> <small>PSI</small></div></div></div>
+          <div class="a-status"><b>安全范围 35–72 PSI</b>当前设定处于推荐区间 · 4.0 / 4.4 bar</div>
+          <div class="a-controls"><div>轮胎<b>Grand Prix · 30C</b></div><div>路况<b>Cat 2 · 铺装</b></div><div>系统<b>开口 + 内胎</b></div><div>总重<b>81.2 kg</b></div></div>
+        </div>
+        <div class="copy"><strong>视觉逻辑</strong><ul><li>深色“仪表”仅服务于结果，不做全页暗色。</li><li>参数变为 2×2 摘要，点击后再展开编辑。</li><li>解释、计算过程移到结果下方，默认折叠。</li></ul></div><button class="choose" data-choice="A：骑行电脑（推荐）">选 A：骑行电脑</button>
+      </article>
+      <article class="card b">
+        <div class="card-head"><span class="index">B</span><div><h2>极简工具</h2><p class="sub">干净、通用、像系统级实用应用</p></div></div>
+        <div class="phone">
+          <div class="phone-bar"><span>公路车胎压</span><span class="pill"></span></div><div class="b-hero"><small>YOUR SETUP</small><h3>最佳胎压推荐</h3><p>根据重量、胎宽与路况实时计算</p></div><div class="b-tile"><span>后轮推荐</span><div class="b-number">64 <em>PSI</em></div><div class="b-below"><span>前轮 59 PSI</span><span>4.4 bar</span></div></div><div class="b-row"><span>当前配置</span><b>30C · 开口胎 · Cat 2　›</b></div><div class="b-row"><span>调整参数</span><b>4 个项目　›</b></div><div class="b-tabs"><span><b>推荐</b></span><span>参数</span><span>原理</span></div>
+        </div>
+        <div class="copy"><strong>视觉逻辑</strong><ul><li>留白更多，移除渐变气泡和大面积模糊。</li><li>以一张结果卡为主；参数集中到独立页签。</li><li>最轻量，维护成本最低，也最像通用工具。</li></ul></div><button class="choose" data-choice="B：极简工具">选 B：极简工具</button>
+      </article>
+      <article class="card c">
+        <div class="card-head"><span class="index">C</span><div><h2>竞赛数据台</h2><p class="sub">强性能感、适合偏技术玩家</p></div></div>
+        <div class="phone">
+          <div class="phone-bar"><span>TYRE LAB</span><span class="pill"></span></div><div class="c-hero"><div class="c-kicker">SILCA BREAKPOINT · OPTIMIZED</div><div class="c-grid"><div><span>FRONT</span><b>59</b><small>PSI · 4.0 BAR</small></div><div><span>REAR</span><b>64</b><small>PSI · 4.4 BAR</small></div></div></div><div class="c-chart"></div><div class="c-tags"><span>CAT 2</span><span>30C</span><span>81.2 KG</span><span>HOOKED</span></div>
+        </div>
+        <div class="copy"><strong>视觉逻辑</strong><ul><li>煤黑、荧光绿与网格图形形成强烈的竞赛设备感。</li><li>把安全范围、修正因子做成数据标签与小图。</li><li>辨识度最高，但不如 A / B 适合日常与浅色环境。</li></ul></div><button class="choose" data-choice="C：竞赛数据台">选 C：竞赛数据台</button>
+      </article>
+    </section>
+    <section class="principles"><h3>无论选择哪套方向，都会遵守的重设计原则</h3><div class="principle-grid"><div><b>一个主视觉</b><span>首屏只有前/后推荐 PSI 是第一优先级。</span></div><div><b>克制材质</b><span>保留少量层次，不再让每个区域都是毛玻璃。</span></div><div><b>渐进披露</b><span>高频参数在前，计算过程与原理按需展开。</span></div><div><b>颜色有语义</b><span>蓝/绿只表示操作或安全状态，不作无意义装饰。</span></div></div></section>
+  </main>
+</body>
+</html>

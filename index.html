@@ -6,11 +6,11 @@
     <title>公路车胎压计算器</title>
     <meta name="description" content="基于 SILCA 2024-2026 方法论的公路车胎压计算器。支持有钩/无钩轮圈、开口/真空胎、多路况阻抗模型的精确 PSI 推荐。">
     <!-- PWA -->
-    <link rel="manifest" href="../manifest.json">
+    <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="胎压计算">
-    <link rel="apple-touch-icon" href="../icon-512.png">
+    <link rel="apple-touch-icon" href="icon-512.png">
     <meta name="theme-color" content="#007AFF" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -913,7 +913,7 @@
 <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('../sw.js')
+            navigator.serviceWorker.register('./sw.js')
                 .then(reg => console.log('SW registered:', reg.scope))
                 .catch(err => console.log('SW registration failed:', err));
         });
