@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <title>Vook One 2.0 胎压计算器 — UCI Pro 级专业工具</title>
+    <meta name="description" content="基于 SILCA 2024-2026 方法论的公路车胎压计算器。支持有钩/无钩轮圈、开口/真空胎、多路况阻抗模型的精确 PSI 推荐。">
+    <!-- PWA -->
+    <link rel="manifest" href="../manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="胎压计算">
+    <link rel="apple-touch-icon" href="../icon-512.png">
+    <meta name="theme-color" content="#007AFF" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --bg-base: #f5f5f7;
+            --bg-gradient-from: #e5e5ea;
+            --bg-gradient-to: #f2f2f7;
+            --bg-blob-a: rgba(0, 122, 255, 0.06);
+            --bg-blob-b: rgba(175, 82, 222, 0.05);
+            --glass-bg: rgba(255, 255, 255, 0.72);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --glass-border-outer: rgba(0, 0, 0, 0.04);
+            --glass-shadow: 0 8px 40px rgba(0, 0, 0, 0.06), 0 1.5px 4px rgba(0, 0, 0, 0.03);
+            --glass-highlight: rgba(255, 255, 255, 0.9);
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-tertiary: #aeaeb2;
+            --accent: #007AFF;
+            --accent-secondary: #5856D6;
+            --accent-glow: rgba(0, 122, 255, 0.15);
+            --accent-glow-secondary: rgba(88, 86, 214, 0.12);
+            --card-inner: rgba(255, 255, 255, 0.6);
+            --slider-track: rgba(0, 0, 0, 0.08);
+            --input-bg: rgba(255, 255, 255, 0.5);
+            --input-border: rgba(255, 255, 255, 0.7);
+            --input-border-outer: rgba(0, 0, 0, 0.06);
+            --input-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            --tag-positive-bg: rgba(255, 149, 0, 0.12);
+            --tag-positive-text: #c55100;
+            --tag-negative-bg: rgba(0, 122, 255, 0.1);
+            --tag-negative-text: #0055cc;
+            --tag-neutral-bg: rgba(142, 142, 147, 0.12);
+            --tag-neutral-text: #6e6e73;
+            --divider: rgba(0, 0, 0, 0.06);
+            --warning-bg: rgba(255, 59, 48, 0.1);
+            --warning-text: #c53030;
+            --safe-bg: rgba(52, 199, 89, 0.1);
+            --safe-text: #1b7a32;
+            --gauge-bg: rgba(0, 0, 0, 0.06);
+        }
+        .dark {
+            --bg-base: #000000;
+            --bg-gradient-from: #0c0c0e;
+            --bg-gradient-to: #1c1c1e;
+            --bg-blob-a: rgba(0, 122, 255, 0.08);
+            --bg-blob-b: rgba(175, 82, 222, 0.06);
+            --glass-bg: rgba(44, 44, 46, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-border-outer: rgba(255, 255, 255, 0.04);
+            --glass-shadow: 0 8px 40px rgba(0, 0, 0, 0.4), 0 1.5px 4px rgba(0, 0, 0, 0.2);
+            --glass-highlight: rgba(255, 255, 255, 0.15);
+            --text-primary: #f5f5f7;
+            --text-secondary: #98989d;
+            --text-tertiary: #636366;
+            --accent: #0a84ff;
+            --accent-secondary: #7d7aff;
+            --accent-glow: rgba(10, 132, 255, 0.25);
+            --accent-glow-secondary: rgba(125, 122, 255, 0.2);
+            --card-inner: rgba(255, 255, 255, 0.05);
+            --slider-track: rgba(255, 255, 255, 0.1);
+            --input-bg: rgba(255, 255, 255, 0.06);
+            --input-border: rgba(255, 255, 255, 0.1);
+            --input-border-outer: rgba(255, 255, 255, 0.03);
+            --input-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            --tag-positive-bg: rgba(255, 159, 10, 0.18);
+            --tag-positive-text: #ff9f0a;
+            --tag-negative-bg: rgba(10, 132, 255, 0.15);
+            --tag-negative-text: #64d2ff;
+            --tag-neutral-bg: rgba(142, 142, 147, 0.15);
+            --tag-neutral-text: #98989d;
+            --divider: rgba(255, 255, 255, 0.06);
+            --warning-bg: rgba(255, 69, 58, 0.18);
+            --warning-text: #ff6961;
+            --safe-bg: rgba(48, 209, 88, 0.15);
+            --safe-text: #30d158;
+            --gauge-bg: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background: var(--bg-base);
+            color: var(--text-primary);
+            transition: background 0.4s ease, color 0.3s ease;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        .tabular-nums, [x-text] { -webkit-user-select: text; user-select: text; }
+
+        .bg-mesh {
+            position: fixed; inset: 0; z-index: 0;
+            background: linear-gradient(160deg, var(--bg-gradient-from), var(--bg-gradient-to));
+            transition: background 0.5s ease;
+        }
+        .bg-mesh::before, .bg-mesh::after {
+            content: ''; position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.8; transition: background 0.5s ease;
+        }
+        .bg-mesh::before { width: 600px; height: 600px; top: -10%; left: -5%; background: var(--bg-blob-a); }
+        .bg-mesh::after { width: 500px; height: 500px; bottom: -10%; right: -5%; background: var(--bg-blob-b); }
+
+        /* Glass panel */
+        .glass {
+            position: relative;
+            background: var(--glass-bg);
+            backdrop-filter: blur(60px) saturate(190%);
+            -webkit-backdrop-filter: blur(60px) saturate(190%);
+            border: 1px solid var(--glass-border);
+            outline: 1px solid var(--glass-border-outer);
+            outline-offset: -1px;
+            box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight), inset 0 -1px 0 rgba(0,0,0,0.02);
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .glass::before {
+            content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--glass-highlight) 50%, transparent);
+            border-radius: 0 0 50% 50%; pointer-events: none; z-index: 1;
+        }
+
+        /* PSI card */
+        .psi-card {
+            position: relative;
+            background: var(--card-inner);
+            backdrop-filter: blur(30px) saturate(160%);
+            -webkit-backdrop-filter: blur(30px) saturate(160%);
+            border: 1px solid var(--glass-border);
+            outline: 1px solid var(--glass-border-outer);
+            outline-offset: -1px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.04), inset 0 1px 0 var(--glass-highlight), inset 0 -1px 0 rgba(0,0,0,0.02);
+            transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+        }
+        .psi-card::before {
+            content: ''; position: absolute; top: 0; left: 15%; right: 15%; height: 1.5px;
+            background: linear-gradient(90deg, transparent, var(--glass-highlight), transparent);
+            border-radius: 0 0 50% 50%; pointer-events: none;
+        }
+        .psi-card:active { transform: scale(0.98); }
+
+        /* Range slider */
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+            background: var(--slider-track); border-radius: 3px; outline: none; cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 28px; height: 28px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px) saturate(180%);
+            -webkit-backdrop-filter: blur(10px) saturate(180%);
+            border: 1.5px solid var(--glass-border); border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12), 0 0 0 0.5px var(--glass-border-outer), inset 0 1px 0 var(--glass-highlight);
+            cursor: pointer; transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+        }
+        input[type="range"]::-webkit-slider-thumb:active {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12), 0 0 0 4px var(--accent-glow), inset 0 1px 0 var(--glass-highlight);
+        }
+
+        /* Select */
+        select {
+            -webkit-appearance: none; appearance: none;
+            background: var(--input-bg);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            border: 1px solid var(--input-border);
+            outline: 1px solid var(--input-border-outer);
+            outline-offset: -1px;
+            color: var(--text-primary);
+            box-shadow: var(--input-shadow);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236e6e73' viewBox='0 0 16 16'%3E%3Cpath d='M8 11.5l-5-5h10l-5 5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 14px center;
+            padding-right: 36px; cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+        }
+        select:focus { border-color: var(--accent); box-shadow: 0 0 0 3.5px var(--accent-glow), var(--input-shadow); outline: none; }
+
+        /* Pill buttons */
+        .pill-btn {
+            transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+            background: var(--input-bg);
+            backdrop-filter: blur(16px) saturate(150%);
+            -webkit-backdrop-filter: blur(16px) saturate(150%);
+            border: 1px solid var(--input-border);
+            box-shadow: var(--input-shadow);
+            color: var(--text-secondary); cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .pill-btn:active { transform: scale(0.96); }
+        .pill-btn.active {
+            background: var(--accent); color: white; border-color: transparent;
+            box-shadow: 0 4px 16px var(--accent-glow), 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Correction tags */
+        .correction-tag { animation: fadeSlideIn 0.3s ease forwards; }
+        @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Section label */
+        .section-label {
+            font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+            color: var(--text-tertiary); margin-bottom: 10px;
+        }
+
+        /* Gauge bar */
+        .gauge-bar {
+            height: 6px; border-radius: 3px; transition: all 0.4s ease;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 3px; }
+
+        .theme-toggle { cursor: pointer; transition: all 0.3s ease; }
+        .theme-toggle:active { transform: scale(0.9); }
+
+        .value-highlight { color: var(--accent); font-variant-numeric: tabular-nums; }
+
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            .psi-card { padding: 1.25rem; border-radius: 1.25rem; }
+            .glass { border-radius: 1.25rem; }
+            select { font-size: 16px; } /* prevent iOS zoom on focus */
+            .section-label { font-size: 10px; }
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen" x-data="calculator()" x-init="init()">
+
+    <div class="bg-mesh"></div>
+
+    <div class="relative z-10 min-h-screen flex flex-col">
+
+        <!-- Header -->
+        <header class="glass sticky top-0 z-50" style="padding-top: env(safe-area-inset-top);">
+            <div class="max-w-2xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[var(--accent)] to-[var(--accent-secondary)] flex items-center justify-center shadow-lg" style="box-shadow: 0 4px 12px var(--accent-glow);">
+                        <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
+                            <path d="M15 6a1 1 0 100-2 1 1 0 000 2zM12 17.5V14l-3-3 4-3 2 3h3"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xs sm:text-sm font-bold" style="color: var(--text-primary);">Vook One 2.0</h1>
+                        <p class="text-[10px] sm:text-[11px] font-medium" style="color: var(--text-tertiary);">胎压计算器 · SILCA Methodology</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-[10px] sm:text-[11px] font-medium hidden sm:block" style="color: var(--text-tertiary);">内宽 21mm · Bross Vagabond</span>
+                    <button class="theme-toggle w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center"
+                        style="background: var(--input-bg); border: 1px solid var(--input-border);"
+                        @click="toggleTheme()" aria-label="切换深浅色模式">
+                        <svg x-show="isDark" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color: var(--text-secondary);">
+                            <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <svg x-show="!isDark" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color: var(--text-secondary);">
+                            <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main -->
+        <main class="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
+
+            <!-- ═══ PSI Results ═══ -->
+            <section class="mb-6 sm:mb-8">
+                <div class="text-center mb-5 sm:mb-6">
+                    <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight" style="color: var(--text-primary);">最佳胎压推荐</h2>
+                    <p class="text-xs sm:text-sm font-medium mt-1" style="color: var(--text-secondary);">
+                        基于 SILCA Breakpoint 模型 · 实时计算
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 sm:gap-5">
+                    <!-- Front -->
+                    <div class="psi-card glass relative rounded-2xl sm:rounded-3xl p-4 sm:p-7 text-center overflow-hidden">
+                        <div class="flex items-center justify-center gap-1.5 sm:gap-2 mb-3 sm:mb-5">
+                            <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center" style="background: var(--accent-glow);">
+                                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color: var(--accent);">
+                                    <path d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+                                </svg>
+                            </div>
+                            <span class="text-[10px] sm:text-xs font-bold uppercase tracking-widest" style="color: var(--text-secondary);">前轮</span>
+                        </div>
+                        <div class="text-4xl sm:text-6xl font-black tabular-nums leading-none" style="color: var(--accent);" x-text="frontPSI"></div>
+                        <div class="text-sm sm:text-base font-bold mt-0.5 sm:mt-1" style="color: var(--accent); opacity: 0.5;">PSI</div>
+                        <div class="mt-3 sm:mt-4 pt-3 sm:pt-4" style="border-top: 1px solid var(--divider);">
+                            <span class="text-lg sm:text-xl font-bold tabular-nums" style="color: var(--text-secondary);" x-text="frontBar"></span>
+                            <span class="text-xs sm:text-sm font-semibold ml-1" style="color: var(--text-tertiary);">bar</span>
+                        </div>
+                    </div>
+
+                    <!-- Rear -->
+                    <div class="psi-card glass relative rounded-2xl sm:rounded-3xl p-4 sm:p-7 text-center overflow-hidden">
+                        <div class="flex items-center justify-center gap-1.5 sm:gap-2 mb-3 sm:mb-5">
+                            <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center" style="background: var(--accent-glow-secondary);">
+                                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color: var(--accent-secondary);">
+                                    <path d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                                </svg>
+                            </div>
+                            <span class="text-[10px] sm:text-xs font-bold uppercase tracking-widest" style="color: var(--text-secondary);">后轮</span>
+                        </div>
+                        <div class="text-4xl sm:text-6xl font-black tabular-nums leading-none" style="color: var(--accent-secondary);" x-text="rearPSI"></div>
+                        <div class="text-sm sm:text-base font-bold mt-0.5 sm:mt-1" style="color: var(--accent-secondary); opacity: 0.5;">PSI</div>
+                        <div class="mt-3 sm:mt-4 pt-3 sm:pt-4" style="border-top: 1px solid var(--divider);">
+                            <span class="text-lg sm:text-xl font-bold tabular-nums" style="color: var(--text-secondary);" x-text="rearBar"></span>
+                            <span class="text-xs sm:text-sm font-semibold ml-1" style="color: var(--text-tertiary);">bar</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Safety gauge -->
+                <div class="mt-4 sm:mt-5">
+                    <div class="flex justify-between text-[10px] sm:text-xs font-medium mb-1.5" style="color: var(--text-tertiary);">
+                        <span>胎压安全范围</span>
+                        <span class="tabular-nums">
+                            <span x-text="tireMinPSI"></span> – <span x-text="tireMaxPSI"></span> PSI
+                            <span x-show="isHookless" class="font-bold" style="color: var(--warning-text);">（无钩圈 ≤73 PSI）</span>
+                        </span>
+                    </div>
+                    <div class="relative h-2 rounded-full overflow-hidden" style="background: var(--gauge-bg);">
+                        <!-- Safe zone gradient -->
+                        <div class="absolute inset-y-0 left-0 rounded-full" style="background: linear-gradient(90deg, #34c759, #ffcc00, #ff3b30);"
+                            :style="'width: ' + gaugePercent + '%'"></div>
+                        <!-- Current marker -->
+                        <div class="absolute top-1/2 -translate-y-1/2 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 border-white shadow-md transition-all duration-500 ease-out"
+                            style="background: var(--accent);"
+                            :style="'left: ' + gaugePercent + '%'"></div>
+                    </div>
+                    <!-- Warning -->
+                    <div x-show="nearMax" class="mt-2 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold"
+                        style="background: var(--warning-bg); color: var(--warning-text);">
+                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                        </svg>
+                        <span x-text="nearMaxWarning"></span>
+                    </div>
+                </div>
+
+                <!-- Baseline info -->
+                <div class="text-center mt-3 sm:mt-4">
+                    <span class="text-[10px] sm:text-xs font-medium" style="color: var(--text-tertiary);">
+                        总重 <span class="font-bold value-highlight" x-text="totalWeight.toFixed(1)"></span> kg
+                        · 有效胎宽 <span class="font-bold value-highlight" x-text="effectiveWidth.toFixed(1)"></span> mm
+                        · 基础 <span class="font-bold value-highlight" x-text="basePSI.toFixed(1)"></span> PSI
+                        · 分配 <span class="font-bold value-highlight" x-text="Math.round(frontRatio*100) + '/' + Math.round(rearRatio*100)"></span>
+                    </span>
+                </div>
+            </section>
+
+            <!-- ═══ Controls ═══ -->
+            <div class="space-y-4 sm:space-y-5">
+
+                <!-- Panel 1: 基础参数 -->
+                <div class="glass relative rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-hidden">
+
+                    <!-- Weight -->
+                    <section>
+                        <div class="section-label">⚖️ 基础重量</div>
+                        <div class="mb-4">
+                            <div class="flex justify-between items-baseline mb-2">
+                                <label class="text-xs sm:text-sm font-semibold" style="color: var(--text-primary);">车手体重</label>
+                                <span class="text-xs sm:text-sm font-bold value-highlight" x-text="riderWeight + ' kg'"></span>
+                            </div>
+                            <input type="range" min="45" max="110" step="1" x-model.number="riderWeight" aria-label="车手体重">
+                            <div class="flex justify-between text-[10px] mt-1 font-medium" style="color: var(--text-tertiary);">
+                                <span>45</span><span>75</span><span>110 kg</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-baseline mb-2">
+                                <label class="text-xs sm:text-sm font-semibold" style="color: var(--text-primary);">车辆重量</label>
+                                <span class="text-xs sm:text-sm font-bold value-highlight" x-text="bikeWeight.toFixed(1) + ' kg'"></span>
+                            </div>
+                            <input type="range" min="6" max="12" step="0.1" x-model.number="bikeWeight" aria-label="车辆重量">
+                            <div class="flex justify-between text-[10px] mt-1 font-medium" style="color: var(--text-tertiary);">
+                                <span>6</span><span>9</span><span>12 kg</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Weight Distribution -->
+                    <section>
+                        <div class="section-label">📐 重量分配（车架几何）</div>
+                        <div class="flex gap-2">
+                            <template x-for="d in distributions" :key="d.label">
+                                <button class="pill-btn flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold"
+                                    :class="distIndex === d.idx && 'active'"
+                                    @click="distIndex = d.idx"
+                                    x-text="d.label + ' (' + Math.round(d.front*100) + '/' + Math.round(d.rear*100) + ')'"></button>
+                            </template>
+                        </div>
+                        <p class="mt-1.5 text-[10px] sm:text-xs font-medium" style="color: var(--text-tertiary);"
+                            x-text="distributions[distIndex].desc"></p>
+                    </section>
+
+                    <!-- Tire Width -->
+                    <section>
+                        <div class="section-label">📏 胎宽选择</div>
+                        <div class="flex gap-2">
+                            <template x-for="w in [28, 30, 32]" :key="w">
+                                <button class="pill-btn flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold"
+                                    :class="width === w && 'active'" @click="width = w" x-text="w + 'c'"></button>
+                            </template>
+                        </div>
+                    </section>
+
+                    <!-- Temperature -->
+                    <section>
+                        <div class="section-label">🌡️ 环境气温</div>
+                        <div class="flex justify-between items-baseline mb-2">
+                            <label class="text-xs sm:text-sm font-semibold" style="color: var(--text-primary);">温度</label>
+                            <span class="text-xs sm:text-sm font-bold value-highlight" x-text="temp + '°C'"></span>
+                        </div>
+                        <input type="range" min="-5" max="45" step="1" x-model.number="temp" aria-label="环境气温">
+                        <div class="flex justify-between text-[10px] mt-1 font-medium" style="color: var(--text-tertiary);">
+                            <span>-5°C</span><span>20°C</span><span>45°C</span>
+                        </div>
+                        <p class="mt-1 text-[10px] font-medium" style="color: var(--text-tertiary);">
+                            每 ±5.5°C ≈ ±1 PSI（气体定律） · 当前修正 <span class="font-bold value-highlight" x-text="(tempCorrection > 0 ? '+' : '') + tempCorrection.toFixed(1) + ' PSI'"></span>
+                        </p>
+                    </section>
+                </div>
+
+                <!-- Panel 2: 装备与场景 -->
+                <div class="glass relative rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-hidden">
+
+                    <!-- Tire Model -->
+                    <section>
+                        <div class="section-label">🛞 轮胎系统</div>
+                        <select x-model.number="tireIndex" class="w-full px-4 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-medium" aria-label="轮胎型号">
+                            <option value="0">马牌 Grand Prix（新版 Black Chili）</option>
+                            <option value="1">Veposs RS600（Vook 标配）</option>
+                            <option value="2">GP5000 / Maxxis High Road</option>
+                            <option value="3">Michelin Power Cup</option>
+                            <option value="4">Arisun Wind R1（艾瑞森）</option>
+                        </select>
+                        <p class="mt-1.5 text-[10px] sm:text-xs font-medium" style="color: var(--text-tertiary);" x-text="currentTire.desc"></p>
+                        <div class="mt-1 flex gap-2 text-[10px] font-semibold">
+                            <span style="color: var(--tag-neutral-text);">
+                                上限：<span x-text="tireMaxPSI + ' PSI (' + (tireMaxPSI/14.5038).toFixed(1) + ' bar)'"></span>
+                            </span>
+                        </div>
+                    </section>
+
+                    <!-- System Type (Clincher / Tubeless) -->
+                    <section>
+                        <div class="section-label">💨 胎系统类型</div>
+                        <div class="flex gap-2">
+                            <button class="pill-btn flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold"
+                                :class="systemType === 'clincher' && 'active'"
+                                @click="systemType = 'clincher'">
+                                开口胎 + 内胎
+                            </button>
+                            <button class="pill-btn flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold"
+                                :class="systemType === 'tubeless' && 'active'"
+                                @click="systemType = 'tubeless'">
+                                真空胎 Tubeless
+                            </button>
+                        </div>
+                        <p class="mt-1.5 text-[10px] sm:text-xs font-medium" style="color: var(--text-tertiary);">
+                            <span x-show="systemType === 'clincher'">传统开口胎 + 内胎系统 → 基准胎压</span>
+                            <span x-show="systemType === 'tubeless'">无内胎系统 → -8 PSI 无蛇咬风险 · 更低压更舒适</span>
+                        </p>
+                    </section>
+
+                    <!-- Rim Type -->
+                    <section>
+                        <div class="section-label">🔩 轮圈类型</div>
+                        <div class="flex gap-2">
+                            <button class="pill-btn flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold"
+                                :class="rimType === 'hooked' && 'active'"
+                                @click="rimType = 'hooked'">
+                                有钩圈 Hooked
+                            </button>
+                            <button class="pill-btn flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold"
+                                :class="rimType === 'hookless' && 'active'"
+                                @click="rimType = 'hookless'">
+                                无钩圈 Hookless
+                            </button>
+                        </div>
+                        <p class="mt-1.5 text-[10px] sm:text-xs font-medium" style="color: var(--text-tertiary);">
+                            <span x-show="rimType === 'hooked'">有钩圈 · 轮圈内宽 21mm · 无安全上限限制</span>
+                            <span x-show="rimType === 'hookless'" style="color: var(--warning-text);">⚠️ 无钩圈 · ETRTO 安全上限 ≤73 PSI (5.0 bar)</span>
+                        </p>
+                    </section>
+
+                    <!-- Road Surface -->
+                    <section>
+                        <div class="section-label">🛣️ 路况场景（SILCA 阻抗模型）</div>
+                        <select x-model.number="roadIndex" class="w-full px-4 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-medium" aria-label="路况选择">
+                            <option value="0">Cat 1 · 全新柏油（Smooth Asphalt）</option>
+                            <option value="1" selected>Cat 2 · 一般铺装（Standard Pavement）</option>
+                            <option value="2">Cat 3 · 老化/磨损路面（Worn Tarmac）</option>
+                            <option value="3">Cat 4 · 粗糙/碎石路面（Rough/Chip Seal）</option>
+                            <option value="4">Cat 5 · 湿滑路面（Wet Conditions）</option>
+                        </select>
+                        <p class="mt-1.5 text-[10px] sm:text-xs font-medium" style="color: var(--text-tertiary);" x-text="currentRoad.desc"></p>
+                        <p class="mt-1 text-[10px] font-medium" style="color: var(--text-secondary);" x-text="currentRoad.explain"></p>
+                    </section>
+
+                    <!-- Intensity -->
+                    <section>
+                        <div class="section-label">⚡ 骑行强度</div>
+                        <select x-model.number="intensityIndex" class="w-full px-4 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-medium" aria-label="骑行强度">
+                            <option value="0">通勤/休闲（&lt;25 km/h）</option>
+                            <option value="1" selected>训练巡航（25–32 km/h）</option>
+                            <option value="2">竞速/刷圈（&gt;32 km/h）</option>
+                        </select>
+                        <p class="mt-1.5 text-[10px] sm:text-xs font-medium" style="color: var(--text-tertiary);" x-text="intensities[intensityIndex].desc"></p>
+                    </section>
+                </div>
+
+                <!-- Panel 3: 修正分析 -->
+                <div class="glass relative rounded-2xl p-4 sm:p-6 overflow-hidden">
+                    <div class="flex items-center gap-2 mb-3 sm:mb-4">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color: var(--text-tertiary);">
+                            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <span class="text-xs font-bold uppercase tracking-wider" style="color: var(--text-secondary);">修正因子</span>
+                    </div>
+
+                    <div class="flex flex-wrap gap-1.5 sm:gap-2 mb-5 sm:mb-6">
+                        <template x-for="(c, i) in corrections" :key="i">
+                            <span class="correction-tag inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold"
+                                :style="c.value > 0
+                                    ? 'background:var(--tag-positive-bg);color:var(--tag-positive-text)'
+                                    : c.value < 0
+                                    ? 'background:var(--tag-negative-bg);color:var(--tag-negative-text)'
+                                    : 'background:var(--tag-neutral-bg);color:var(--tag-neutral-text)'">
+                                <span x-text="c.label"></span>
+                                <span class="font-bold tabular-nums"
+                                    x-text="c.isMultiplier ? c.display : (c.value > 0 ? '+' : '') + c.value.toFixed(1) + ' PSI'"></span>
+                            </span>
+                        </template>
+                        <span x-show="corrections.length === 0" class="text-[10px] sm:text-xs font-medium" style="color: var(--text-tertiary);">当前无额外修正（标准基准）</span>
+                    </div>
+
+                    <!-- Calculation breakdown -->
+                    <div style="border-top: 1px solid var(--divider);" class="pt-3 sm:pt-4">
+                        <div class="section-label">📊 计算过程</div>
+                        <div class="space-y-2 text-[10px] sm:text-xs font-medium" style="color: var(--text-secondary);">
+                            <div class="flex justify-between">
+                                <span>总重</span>
+                                <span class="tabular-nums" x-text="totalWeight.toFixed(1) + ' kg'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>前轮负载（<span x-text="Math.round(frontRatio*100)+'%'"></span>）</span>
+                                <span class="tabular-nums value-highlight" x-text="(totalWeight * frontRatio).toFixed(1) + ' kg'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>后轮负载（<span x-text="Math.round(rearRatio*100)+'%'"></span>）</span>
+                                <span class="tabular-nums value-highlight" x-text="(totalWeight * rearRatio).toFixed(1) + ' kg'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>有效胎宽（标称 +1.5mm）</span>
+                                <span class="tabular-nums value-highlight" x-text="effectiveWidth.toFixed(1) + ' mm'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>前轮基础 PSI（Breakpoint）</span>
+                                <span class="tabular-nums value-highlight" x-text="_wheelBasePSI(frontRatio).toFixed(1)"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>后轮基础 PSI（Breakpoint）</span>
+                                <span class="tabular-nums value-highlight" x-text="_wheelBasePSI(rearRatio).toFixed(1)"></span>
+                            </div>
+                            <template x-for="(c, i) in corrections" :key="'b'+i">
+                                <div class="flex justify-between">
+                                    <span x-text="c.label"></span>
+                                    <span class="tabular-nums font-bold"
+                                        :style="c.value > 0 ? 'color:var(--tag-positive-text)' : c.value < 0 ? 'color:var(--tag-negative-text)' : 'color:var(--tag-neutral-text)'"
+                                        x-text="c.isMultiplier ? c.display : (c.value > 0 ? '+' : '') + c.value.toFixed(1) + ' PSI'"></span>
+                                </div>
+                            </template>
+                            <template x-if="rimType === 'hookless'">
+                                <div class="flex justify-between font-bold" style="color: var(--warning-text);">
+                                    <span>无钩圈上限钳制</span>
+                                    <span class="tabular-nums">≤ 73 PSI</span>
+                                </div>
+                            </template>
+                            <div class="pt-2" style="border-top: 1px solid var(--divider);">
+                                <div class="flex justify-between font-bold text-xs sm:text-sm" style="color: var(--text-primary);">
+                                    <span>最终推荐</span>
+                                    <span class="tabular-nums">
+                                        <span style="color: var(--accent);" x-text="frontPSI"></span>
+                                        /
+                                        <span style="color: var(--accent-secondary);" x-text="rearPSI"></span>
+                                        PSI
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ Educational: Why This Pressure ═══ -->
+                <div class="glass relative rounded-2xl p-4 sm:p-6 overflow-hidden">
+                    <div class="flex items-center gap-2 mb-3">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color: var(--accent-secondary);">
+                            <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span class="text-xs font-bold uppercase tracking-wider" style="color: var(--text-secondary);">💡 为什么是这个胎压？</span>
+                    </div>
+                    <div class="text-[10px] sm:text-xs leading-relaxed space-y-2" style="color: var(--text-secondary);">
+                        <p>
+                            <strong style="color: var(--text-primary);">Breakpoint 转折点原理：</strong>
+                            胎压过低 → 胎体变形摩擦增大（<span style="color: var(--tag-positive-text);">胎体损失 ↑</span>）；
+                            胎压过高 → 路面颠簸震动耗能（<span style="color: var(--tag-negative-text);">阻抗损失 ↑</span>）。
+                            最佳胎压是两条曲线的交点——既不过度形变，也不过度弹跳。
+                        </p>
+                        <p>
+                            <strong style="color: var(--text-primary);" x-text="currentRoad.name + '：'"></strong>
+                            <span x-text="currentRoad.explain"></span>
+                        </p>
+                        <p>
+                            <strong style="color: var(--text-primary);">前后轮差异：</strong>
+                            基于 <span x-text="Math.round(frontRatio*100)+'/'+Math.round(rearRatio*100)"></span> 重量分配，
+                            后轮承受更多重量，需要更高胎压支撑。前轮有转向和滤震需求，略低更佳。
+                        </p>
+                        <p x-show="systemType === 'tubeless'">
+                            <strong style="color: var(--text-primary);">真空胎优势：</strong>
+                            无内胎系统消除了蛇咬爆胎风险，可安全降低 5–10 PSI，获得更低滚阻和更好舒适度。
+                            这是 Pro Peloton 当前的主流配置。
+                        </p>
+                        <p x-show="rimType === 'hookless'">
+                            <strong style="color: var(--warning-text);">无钩圈安全提示：</strong>
+                            ETRTO/ISO 规定无钩轮圈胎压不得超过 73 PSI (5.0 bar)，超压可能导致脱圈事故。
+                        </p>
+                        <p>
+                            <strong style="color: var(--text-primary);">微调建议：</strong>
+                            雨天可再降 2–3 PSI 增加抓地力；前轮可比推荐再低 1–2 PSI 改善舒适度。
+                            以本推荐为<strong>上限起始点</strong>逐步微调。
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <footer class="text-center py-4 sm:py-6 text-[10px] sm:text-[11px] font-medium" style="color: var(--text-tertiary);">
+            Vook One 2.0 · SILCA 2024-2026 Breakpoint Methodology · 内宽 21mm · Bross Vagabond
+        </footer>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ALPINE.JS APPLICATION LOGIC v2.0           -->
+    <!-- ═══════════════════════════════════════════ -->
+    <script>
+        function calculator() {
+            return {
+                // ── Theme ──
+                isDark: (() => {
+                    const saved = localStorage.getItem('vook-theme-v2');
+                    if (saved) return saved === 'dark';
+                    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+                })(),
+
+                init() {
+                    document.documentElement.classList.toggle('dark', this.isDark);
+                    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                        if (!localStorage.getItem('vook-theme-v2')) {
+                            this.isDark = e.matches;
+                            document.documentElement.classList.toggle('dark', this.isDark);
+                        }
+                    });
+                },
+
+                toggleTheme() {
+                    this.isDark = !this.isDark;
+                    document.documentElement.classList.toggle('dark', this.isDark);
+                    localStorage.setItem('vook-theme-v2', this.isDark ? 'dark' : 'light');
+                },
+
+                // ── User Inputs ──
+                riderWeight: 76,
+                bikeWeight: 10.3,
+                tireIndex: 0,
+                systemType: 'clincher',   // 'clincher' | 'tubeless'
+                rimType: 'hooked',         // 'hooked' | 'hookless'
+                width: 30,
+                distIndex: 1,              // 0=Racing 1=Endurance 2=Touring
+                roadIndex: 1,
+                temp: 20,
+                intensityIndex: 1,
+
+                // ── Hardware Constants ──
+                rimInternalWidth: 21,
+
+                // ── Weight Distributions ──
+                distributions: [
+                    { idx: 0, label: '竞技', front: 0.45, rear: 0.55, desc: 'Race 几何 · 重心偏前 · 激进姿势' },
+                    { idx: 1, label: '耐力', front: 0.42, rear: 0.58, desc: 'Endurance 几何 · Bross Vagabond · 均衡舒适' },
+                    { idx: 2, label: '长途', front: 0.40, rear: 0.60, desc: 'Touring 几何 · 重心偏后 · 长途舒适' },
+                ],
+
+                get frontRatio() { return this.distributions[this.distIndex].front; },
+                get rearRatio() { return this.distributions[this.distIndex].rear; },
+
+                // ── Tire Database (actual max pressures from manufacturer specs, 21mm internal rim) ──
+                // max: { 28: PSI, 30: PSI, 32: PSI }
+                tires: [
+                    {
+                        name: '马牌 Grand Prix（新版 Black Chili）',
+                        adj: 0,
+                        desc: '新版 Grand Prix · 与 GP5000 同款 Black Chili 胶料 · 三层帘布',
+                        max: { 28: 94, 30: 72, 32: 72 },
+                    },
+                    {
+                        name: 'Veposs RS600（Vook 标配）',
+                        adj: -2,
+                        desc: '竞技超轻开口胎 · 偏硬套管 → -2 PSI 形变补偿',
+                        max: { 28: 115, 30: 105, 32: 95 },
+                    },
+                    {
+                        name: 'GP5000 / Maxxis High Road',
+                        adj: 0,
+                        desc: '高 TPI / Vectran 防刺 · 竞赛基准',
+                        max: { 28: 115, 30: 102, 32: 102 },
+                    },
+                    {
+                        name: 'Michelin Power Cup',
+                        adj: 1,
+                        desc: '极度柔顺 · Gum-X 配方 · 竞速取向 → +1 PSI 支撑',
+                        max: { 28: 94, 30: 87, 32: 80 },
+                    },
+                    {
+                        name: 'Arisun Wind R1（艾瑞森）',
+                        adj: -2,
+                        desc: '训练级 · C2-ULTRA 双重配方 · 330 TPI → -2 PSI',
+                        max: { 28: 110, 30: 100, 32: 90 },
+                    },
+                ],
+
+                // ── Road Surface Database (SILCA-inspired impedance model) ──
+                // multiplier: how road surface shifts the breakpoint
+                // Lower multiplier = rougher road = more impedance loss = lower optimal pressure
+                roads: [
+                    {
+                        name: 'Cat 1 · 全新柏油',
+                        multiplier: 1.03,
+                        desc: '新铺沥青 · 赛道级平整',
+                        explain: '路面近乎完美，阻抗损失极低 → 可略高压以降低胎体形变损失。',
+                    },
+                    {
+                        name: 'Cat 2 · 一般铺装',
+                        multiplier: 1.00,
+                        desc: '标准沥青路 · 日常训练路面',
+                        explain: '最常见的铺装路面，Breakpoint 位于标准胎压区间。',
+                    },
+                    {
+                        name: 'Cat 3 · 老化/磨损路面',
+                        multiplier: 0.94,
+                        desc: '使用多年的沥青 · 有细小裂纹和补丁',
+                        explain: '路面微不平整增加阻抗损失 → Breakpoint 下移约 6%，需适度降压滤震。',
+                    },
+                    {
+                        name: 'Cat 4 · 粗糙/碎石路面',
+                        multiplier: 0.86,
+                        desc: '粗颗粒沥青 · 碎石路 · 年久失修',
+                        explain: '高阻抗路面，震动耗能显著 → Breakpoint 大幅下移约 14%。如果打高压，每一处颠簸都在消耗你的功率。',
+                    },
+                    {
+                        name: 'Cat 5 · 湿滑路面',
+                        multiplier: 0.92,
+                        desc: '雨天/地湿 · 抓地力优先',
+                        explain: '湿滑条件下需降压增大接地面积提升抓地力。即使路面平整，安全优先于滚阻。',
+                    },
+                ],
+
+                // ── Intensity Database ──
+                intensities: [
+                    { name: '通勤/休闲', adj: -2, desc: '<25 km/h → -2 PSI 舒适优先（滚阻影响 <0.3W）' },
+                    { name: '训练巡航', adj: 0, desc: '25–32 km/h → 基准（平衡舒适与效率）' },
+                    { name: '竞速/刷圈', adj: 2, desc: '>32 km/h → +2 PSI 支撑（滚阻敏感区，冲击频率更高）' },
+                ],
+
+                // ── Computed ──
+                get effectiveWidth() { return this.width + 1.5; },
+                get totalWeight() { return this.riderWeight + this.bikeWeight; },
+                get currentTire() { return this.tires[this.tireIndex]; },
+                get currentRoad() { return this.roads[this.roadIndex]; },
+
+                // Base formula: calibrated to SILCA breakpoint model
+                // For 83kg total on 28C, produces ~66F / 71R — consistent with SILCA output range
+                _wheelBasePSI(ratio) {
+                    const wheelLoad = this.totalWeight * ratio;
+                    return 0.38 * wheelLoad - 3.5 * this.effectiveWidth + 156;
+                },
+
+                get basePSI() {
+                    return (this._wheelBasePSI(this.frontRatio) + this._wheelBasePSI(this.rearRatio)) / 2;
+                },
+
+                // Temperature correction (ideal gas law: ~0.18 PSI per °C from 20°C baseline)
+                // PV = nRT → at constant V, P ∝ T(K). At 293K (20°C), dP/dT ≈ P/293.
+                // For ~80 PSI tire: 80/293 ≈ 0.27 PSI/°C. But real-world factor is ~0.5 PSI per 5.5°C ≈ 0.09 PSI/°C
+                // due to tire casing expansion. Use 0.12 PSI/°C as practical compromise.
+                get tempCorrection() {
+                    const delta = this.temp - 20;
+                    if (Math.abs(delta) < 1) return 0;
+                    if (delta < 0) return delta * 0.15;   // cold: pressure drops ~0.15 PSI/°C
+                    return delta * (-0.10);                 // hot: pressure rises, want -0.10 PSI/°C
+                },
+
+                get corrections() {
+                    const list = [];
+                    const tire = this.currentTire;
+
+                    if (tire.adj !== 0) list.push({ label: tire.name.split('（')[0].trim(), value: tire.adj, isMultiplier: false });
+                    if (this.systemType === 'tubeless') list.push({ label: '真空胎系统', value: -8, isMultiplier: false });
+                    const road = this.currentRoad;
+                    if (road.multiplier !== 1.0) list.push({ label: road.name, value: road.multiplier, isMultiplier: true, display: '×' + road.multiplier });
+                    if (Math.abs(this.tempCorrection) > 0.05) {
+                        const d = this.temp - 20;
+                        const dir = d < 0 ? '低温补偿' : '高温防胀';
+                        list.push({ label: `${this.temp}°C ${dir}`, value: this.tempCorrection, isMultiplier: false });
+                    }
+                    const intensity = this.intensities[this.intensityIndex];
+                    if (intensity.adj !== 0) list.push({ label: intensity.name, value: intensity.adj, isMultiplier: false });
+                    return list;
+                },
+
+                // Get tire max PSI for current width
+                get tireMaxPSI() {
+                    const m = this.currentTire.max;
+                    // If rim is hookless, cap at 73 PSI per ETRTO
+                    const tireMax = m[this.width] || 120;
+                    if (this.rimType === 'hookless') return Math.min(tireMax, 73);
+                    return tireMax;
+                },
+
+                get tireMinPSI() {
+                    // Minimum safe pressure: roughly 30 PSI for road clincher
+                    if (this.systemType === 'tubeless') return 25;
+                    return 35;
+                },
+
+                get isHookless() { return this.rimType === 'hookless'; },
+
+                // Calculate PSI for one wheel
+                _calculate(ratio) {
+                    let psi = this._wheelBasePSI(ratio);
+
+                    // Additive corrections
+                    psi += this.currentTire.adj;
+                    if (this.systemType === 'tubeless') psi -= 8;
+                    psi += this.tempCorrection;
+                    psi += this.intensities[this.intensityIndex].adj;
+
+                    // Multiplicative road surface correction (SILCA impedance model)
+                    psi *= this.currentRoad.multiplier;
+
+                    // Clamp to tire-specific limits
+                    return Math.max(this.tireMinPSI, Math.min(this.tireMaxPSI, psi));
+                },
+
+                get frontPSI() { return Math.round(this._calculate(this.frontRatio)); },
+                get rearPSI() { return Math.round(this._calculate(this.rearRatio)); },
+                get frontBar() { return (this._calculate(this.frontRatio) / 14.5038).toFixed(1); },
+                get rearBar() { return (this._calculate(this.rearRatio) / 14.5038).toFixed(1); },
+
+                // Safety gauge
+                get gaugePercent() {
+                    // Show where the average of front+rear sits within safe range
+                    const avg = (this._calculate(this.frontRatio) + this._calculate(this.rearRatio)) / 2;
+                    const range = this.tireMaxPSI - this.tireMinPSI;
+                    if (range <= 0) return 50;
+                    const pct = ((avg - this.tireMinPSI) / range) * 100;
+                    return Math.max(0, Math.min(100, pct));
+                },
+
+                get nearMax() {
+                    const rear = this._calculate(this.rearRatio);
+                    return rear >= this.tireMaxPSI * 0.90;
+                },
+
+                get nearMaxWarning() {
+                    const rear = this._calculate(this.rearRatio);
+                    if (rear >= this.tireMaxPSI) {
+                        return `⚠️ 后轮胎压已达上限 ${this.tireMaxPSI} PSI！请考虑换宽胎或减轻负重。`;
+                    }
+                    return `⚠️ 后轮胎压接近上限 ${this.tireMaxPSI} PSI（当前 ${Math.round(rear)} PSI），请注意安全余量。`;
+                },
+            };
+        }
+    </script>
+</body>
+
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('../sw.js')
+                .then(reg => console.log('SW registered:', reg.scope))
+                .catch(err => console.log('SW registration failed:', err));
+        });
+    }
+</script>
+</html>
