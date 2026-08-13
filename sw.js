@@ -1,11 +1,11 @@
 // 公路车胎压计算器 — Service Worker
-const CACHE_NAME = 'vook-tire-v2';
+const CACHE_NAME = 'vook-tire-v3';
 const ASSETS = [
     './',
     './index.html',
     './manifest.json',
     './icon-512.png',
-    'https://cdn.tailwindcss.com',
+    './tailwind.css',
     'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js'
 ];
 
